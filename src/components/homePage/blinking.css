@@ -1,0 +1,22 @@
+.blinking {
+    display: inline-block;
+    width: 1ch;
+    animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+.tilt-wrapper {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+.code-terminal {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
