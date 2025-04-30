@@ -361,7 +361,7 @@ const Header = () => {
                         transition={{ duration: 0.3 }}
                       >
                         <Link
-                          to={`${value.location}?catagory_id=${navOptions._id}`}
+                          to={`${value.location}`}
                           className="block text-[18px] hover:text-dark_red hover:bg-gray-800 w-full text-left px-4 py-3 rounded-md transition-all duration-300 transform hover:translate-x-1"
                           onClick={updateSideMenu}
                         >
@@ -503,7 +503,7 @@ const Header = () => {
                               transition={{ delay: 0.05 * index }}
                             >
                               <Link
-                                to={`/category/${category.name}`}
+                                to={`/category/${category.name}?catagory_id=${category._id}`}
                                 className="block text-[16px] hover:text-dark_red hover:bg-gray-800 w-full text-left px-4 py-2 rounded-md transition-all duration-300 transform hover:translate-x-1"
                                 onClick={updateSideMenu}
                               >
