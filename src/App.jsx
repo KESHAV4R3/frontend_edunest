@@ -1,49 +1,85 @@
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import Header from "./components/application/Header";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResendEmailPage from "./pages/ResendEmailPage";
-import CreateNewPasswordPage from "./pages/CreateNewPasswordPage";
-import ResetCompletePage from "./pages/ResetCompletePage";
-import VerifyMailPage from "./pages/VerifyMailPage";
-import ForgotPasswordPrivate from "./privateRoutePath/ForgotPasswordPrivate";
-import NonLoggedInPrivate from "./privateRoutePath/NonLoggedInPrivate";
-import DashboardPage from "./pages/DashboardPage";
-import AboutUsPage from "./pages/AboutUsPage";
-import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { apiConnector } from "./services/apiConnector";
 import { apiLinks } from "./services/apiLink";
 import { setProfile } from "./redux/slices/profileSlice";
-import { useDispatch } from "react-redux";
-import DashboardPageMyProfile from "./components/dashBoardpage/DashboardPageMyProfile";
-import DashboardPageCourses from "./components/dashBoardpage/DashboardPageCourses";
-import DashboardPageSetting from "./components/dashBoardpage/DashboardPageSetting";
-import DashboardPageInstructorAdmin from "./components/dashBoardpage/DashboardPageInstructorAdmin";
-import DashboardPageStudentAdmin from "./components/dashBoardpage/DashboardPageStudentAdmin";
-import DashboardPageAddcatagory from "./components/dashBoardpage/DashboardPageAddcatagory";
-import DashboardPageDeletecatagory from "./components/dashBoardpage/DashboardPageDeletecatagory";
-import PageNotFound from "./pages/PageNotFound";
-import ContactUsPage from "./pages/ContactUsPage";
-import ViewAllCatagory from "./pages/ViewAllCatagory";
-import DashboardInstructorCreateNewCourse from "./components/dashBoardpage/DashboardInstructorCreateNewCourse";
-import DashboardInstructorCreateNewSection from "./components/dashBoardpage/DashboardInstructorCreateNewSection";
-import DashboardInstructorCreateNewCourseSuccessful from "./components/dashBoardpage/DashboardInstructorCreateNewCourseSuccessful";
-import DashboardInstructorCreateNewSubsection from "./components/dashBoardpage/DashboardInstructorCreateNewSubsection";
+import NonLoggedInPrivate from "./privateRoutePath/NonLoggedInPrivate";
+import ForgotPasswordPrivate from "./privateRoutePath/ForgotPasswordPrivate";
 import CourseCreatePrivate from "./privateRoutePath/CourseCreatePrivate";
-import DashboardMessageToUser from "./components/dashBoardpage/DashboardMessageToUser";
-import CatagoryCourse from "./pages/CatagoryCourse";
-import CourseDetailPage from "./pages/CourseDetailPage";
-import DashboardAccountSetting from "./components/dashBoardpage/DashboardAccountSetting";
-import CartPage from "./pages/CartPage";
-import CourseCompleteViewBuStudent from "./pages/CourseCompleteViewBuStudent";
-import SearchResult from "./pages/SearchResult";
+
+// Lazy load all page components
+const HomePage = lazy(() => import("./pages/HomePage"));
+const Header = lazy(() => import("./components/application/Header"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResendEmailPage = lazy(() => import("./pages/ResendEmailPage"));
+const CreateNewPasswordPage = lazy(() =>
+  import("./pages/CreateNewPasswordPage")
+);
+const ResetCompletePage = lazy(() => import("./pages/ResetCompletePage"));
+const VerifyMailPage = lazy(() => import("./pages/VerifyMailPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AboutUsPage = lazy(() => import("./pages/AboutUsPage"));
+const ContactUsPage = lazy(() => import("./pages/ContactUsPage"));
+const ViewAllCatagory = lazy(() => import("./pages/ViewAllCatagory"));
+const CatagoryCourse = lazy(() => import("./pages/CatagoryCourse"));
+const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const CourseCompleteViewBuStudent = lazy(() =>
+  import("./pages/CourseCompleteViewBuStudent")
+);
+const SearchResult = lazy(() => import("./pages/SearchResult"));
+const PageNotFound = lazy(() => import("./pages/PageNotFound"));
+
+// Lazy load dashboard components
+const DashboardPageMyProfile = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageMyProfile")
+);
+const DashboardMessageToUser = lazy(() =>
+  import("./components/dashBoardpage/DashboardMessageToUser")
+);
+const DashboardPageCourses = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageCourses")
+);
+const DashboardPageSetting = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageSetting")
+);
+const DashboardPageInstructorAdmin = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageInstructorAdmin")
+);
+const DashboardPageStudentAdmin = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageStudentAdmin")
+);
+const DashboardAccountSetting = lazy(() =>
+  import("./components/dashBoardpage/DashboardAccountSetting")
+);
+const DashboardPageAddcatagory = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageAddcatagory")
+);
+const DashboardPageDeletecatagory = lazy(() =>
+  import("./components/dashBoardpage/DashboardPageDeletecatagory")
+);
+const DashboardInstructorCreateNewCourse = lazy(() =>
+  import("./components/dashBoardpage/DashboardInstructorCreateNewCourse")
+);
+const DashboardInstructorCreateNewSection = lazy(() =>
+  import("./components/dashBoardpage/DashboardInstructorCreateNewSection")
+);
+const DashboardInstructorCreateNewSubsection = lazy(() =>
+  import("./components/dashBoardpage/DashboardInstructorCreateNewSubsection")
+);
+const DashboardInstructorCreateNewCourseSuccessful = lazy(() =>
+  import(
+    "./components/dashBoardpage/DashboardInstructorCreateNewCourseSuccessful"
+  )
+);
 
 function App() {
-  // for automatic login on page reload or after exit
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -57,201 +93,326 @@ function App() {
         setLoading(false);
       }
     };
-    fetchUser();
-  }, []);
 
-  if (loading)
-    return (
-      <div className="text-white bg-dark_bg w-full h-screen flex justify-center items-center">
-        <div className="flex items-center justify-center gap-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-600"></div>
-          <span className="text-[20px] font-bold text-gray-400">
-            {" "}
-            Loading...
-          </span>
-        </div>
-      </div>
-    );
+    fetchUser();
+  }, [dispatch]);
+
+  const SimpleSpinner = () => (
+    <div className="text-white bg-dark_bg w-full h-screen flex justify-center items-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-400"></div>
+    </div>
+  );
 
   return (
     <div className="perspective-1000 bg-dark_bg overflow-x-hidden overflow-y-auto w-full h-screen">
-      <Header />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
+      <Suspense fallback={null}>
+        <Header />
+      </Suspense>
 
-        <Route
-          path="/login"
-          element={
-            <NonLoggedInPrivate>
-              <LoginPage />
-            </NonLoggedInPrivate>
-          }
-        />
+      {loading ? (
+        <SimpleSpinner />
+      ) : (
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Suspense fallback={<SimpleSpinner />}>
+                <HomePage />
+              </Suspense>
+            }
+          />
 
-        <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/login"
+            element={
+              <NonLoggedInPrivate>
+                <Suspense fallback={<SimpleSpinner />}>
+                  <LoginPage />
+                </Suspense>
+              </NonLoggedInPrivate>
+            }
+          />
 
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/register"
+            element={
+              <Suspense fallback={<SimpleSpinner />}>
+                <RegisterPage />
+              </Suspense>
+            }
+          />
 
-        <Route
-          path="/resend-email"
-          element={
-            <ForgotPasswordPrivate>
-              <ResendEmailPage />
-            </ForgotPasswordPrivate>
-          }
-        />
+          <Route
+            path="/forgot-password"
+            element={
+              <Suspense fallback={<SimpleSpinner />}>
+                <ForgotPasswordPage />
+              </Suspense>
+            }
+          />
 
-        <Route
-          path="/create-new-password/:id"
-          element={
-            <ForgotPasswordPrivate>
-              <CreateNewPasswordPage />
-            </ForgotPasswordPrivate>
-          }
-        />
+          <Route
+            path="/resend-email"
+            element={
+              <ForgotPasswordPrivate>
+                <Suspense fallback={<SimpleSpinner />}>
+                  <ResendEmailPage />
+                </Suspense>
+              </ForgotPasswordPrivate>
+            }
+          />
 
-        <Route
-          path="/reset-complete"
-          element={
-            <ForgotPasswordPrivate>
-              <ResetCompletePage />
-            </ForgotPasswordPrivate>
-          }
-        />
+          <Route
+            path="/create-new-password/:id"
+            element={
+              <ForgotPasswordPrivate>
+                <Suspense fallback={<SimpleSpinner />}>
+                  <CreateNewPasswordPage />
+                </Suspense>
+              </ForgotPasswordPrivate>
+            }
+          />
 
-        <Route
-          path="/verify-mail"
-          element={
-            <NonLoggedInPrivate>
-              <VerifyMailPage />
-            </NonLoggedInPrivate>
-          }
-        />
+          <Route
+            path="/reset-complete"
+            element={
+              <ForgotPasswordPrivate>
+                <Suspense fallback={<SimpleSpinner />}>
+                  <ResetCompletePage />
+                </Suspense>
+              </ForgotPasswordPrivate>
+            }
+          />
 
-        {/* dashboard */}
-        <Route
-          path="/dashboard"
-          element={
-            <NonLoggedInPrivate dashboard="true">
-              <DashboardPage />
-            </NonLoggedInPrivate>
-          }
-        >
           <Route
-            index
+            path="/verify-mail"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageMyProfile />
+              <NonLoggedInPrivate>
+                <Suspense fallback={<SimpleSpinner />}>
+                  <VerifyMailPage />
+                </Suspense>
               </NonLoggedInPrivate>
             }
           />
+
+          {/* Dashboard Routes */}
           <Route
-            path="message-from-user"
+            path="/dashboard"
             element={
               <NonLoggedInPrivate dashboard="true">
-                <DashboardMessageToUser />
+                <Suspense fallback={<SimpleSpinner />}>
+                  <DashboardPage />
+                </Suspense>
               </NonLoggedInPrivate>
             }
-          />
+          >
+            <Route
+              index
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageMyProfile />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="message-from-user"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardMessageToUser />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="courses"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageCourses />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="setting"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageSetting />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="instructors-see-all"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageInstructorAdmin />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="student-see-all"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageStudentAdmin />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="accout-setting"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardAccountSetting />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="add-catagory"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageAddcatagory />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="delete-catagory"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardPageDeletecatagory />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="create-new-course"
+              element={
+                <CourseCreatePrivate>
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardInstructorCreateNewCourse />
+                  </Suspense>
+                </CourseCreatePrivate>
+              }
+            />
+            <Route
+              path="create-new-section/:id"
+              element={
+                <CourseCreatePrivate>
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardInstructorCreateNewSection />
+                  </Suspense>
+                </CourseCreatePrivate>
+              }
+            />
+            <Route
+              path="create-new-subsection/:courseId"
+              element={
+                <CourseCreatePrivate>
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardInstructorCreateNewSubsection />
+                  </Suspense>
+                </CourseCreatePrivate>
+              }
+            />
+            <Route
+              path="course-creation-successful"
+              element={
+                <CourseCreatePrivate>
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardInstructorCreateNewCourseSuccessful />
+                  </Suspense>
+                </CourseCreatePrivate>
+              }
+            />
+          </Route>
+
+          {/* Other Routes */}
           <Route
-            path="courses"
+            path="/view-course/:courseId"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageCourses />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <CourseCompleteViewBuStudent />
+              </Suspense>
             }
           />
           <Route
-            path="setting"
+            path="/about-us"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageSetting />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <AboutUsPage />
+              </Suspense>
             }
           />
           <Route
-            path="instructors-see-all"
+            path="/contact-us"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageInstructorAdmin />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <ContactUsPage />
+              </Suspense>
             }
           />
           <Route
-            path="student-see-all"
+            path="/search/:searchData"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageStudentAdmin />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <SearchResult />
+              </Suspense>
             }
           />
           <Route
-            path="accout-setting"
+            path="/all-categories"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardAccountSetting />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <ViewAllCatagory />
+              </Suspense>
             }
           />
           <Route
-            path="add-catagory"
+            path="/category/:name"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageAddcatagory />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <CatagoryCourse />
+              </Suspense>
             }
           />
           <Route
-            path="delete-catagory"
+            path="/course-detail/:courseId"
             element={
-              <NonLoggedInPrivate dashboard="true">
-                <DashboardPageDeletecatagory />
-              </NonLoggedInPrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <CourseDetailPage />
+              </Suspense>
             }
           />
           <Route
-            path="create-new-course"
+            path="/cart"
             element={
-              <CourseCreatePrivate>
-                <DashboardInstructorCreateNewCourse />
-              </CourseCreatePrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <CartPage />
+              </Suspense>
             }
           />
           <Route
-            path="create-new-section/:id"
+            path="*"
             element={
-              <CourseCreatePrivate>
-                <DashboardInstructorCreateNewSection />
-              </CourseCreatePrivate>
+              <Suspense fallback={<SimpleSpinner />}>
+                <PageNotFound />
+              </Suspense>
             }
           />
-          <Route
-            path="create-new-subsection/:courseId"
-            element={
-              <CourseCreatePrivate>
-                <DashboardInstructorCreateNewSubsection />
-              </CourseCreatePrivate>
-            }
-          />
-          <Route
-            path="course-creation-successful"
-            element={
-              <CourseCreatePrivate>
-                <DashboardInstructorCreateNewCourseSuccessful />
-              </CourseCreatePrivate>
-            }
-          />
-        </Route>
-        <Route path="/view-course/:courseId" element={<CourseCompleteViewBuStudent />} />
-        <Route path="/about-us" element={<AboutUsPage />} />
-        <Route path="/contact-us" element={<ContactUsPage />} />
-        <Route path="/search/:searchData" element={<SearchResult />} />
-        <Route path="/all-categories" element={<ViewAllCatagory />} />
-        <Route path="/category/:name" element={<CatagoryCourse />} />
-        <Route path="/course-detail/:courseId" element={<CourseDetailPage />} />
-        <Route path="*" element={<PageNotFound />}></Route>
-        <Route path="/cart" element={<CartPage />}></Route>
-      </Routes>
+        </Routes>
+      )}
     </div>
   );
 }

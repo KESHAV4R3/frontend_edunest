@@ -16,7 +16,6 @@ import { setProfile, setPersonalData } from "../../redux/slices/profileSlice";
 import { toast } from "react-toastify";
 import { RxCross2 } from "react-icons/rx";
 import { motion, AnimatePresence } from "framer-motion";
-import { LuMessageCircleMore } from "react-icons/lu";
 import { IoSearch } from "react-icons/io5";
 
 const Header = () => {
@@ -217,11 +216,7 @@ const Header = () => {
             <div key={index} className="relative">
               <Link to={`${value.location}`}>
                 <p
-                  className={`relative flex items-center gap-2 cursor-pointer ${
-                    currentCatalog == value.name
-                      ? "text-dark_red"
-                      : "text-white"
-                  } transition`}
+                  className={`relative flex items-center gap-2 cursor-pointer hover:text-red-700 transition`}
                   onMouseEnter={() => updateCatalogDisplay(value.name)}
                 >
                   {value.name}
@@ -318,19 +313,21 @@ const Header = () => {
               </div>
             )}
           </div>
-          <div className="cursor-pointer">
-            {menuOpen ? (
-              <RxCross1
-                className="text-gray-400 text-[26px] hover:text-white"
-                onClick={updateSideMenu}
-              />
-            ) : (
-              <IoMdMenu
-                className={`text-[26px] hover:text-white text-gray-400`}
-                onClick={updateSideMenu}
-              />
-            )}
-          </div>
+          {user && (
+            <div className="cursor-pointer">
+              {menuOpen ? (
+                <RxCross1
+                  className="text-gray-400 text-[26px] hover:text-white"
+                  onClick={updateSideMenu}
+                />
+              ) : (
+                <IoMdMenu
+                  className={`text-[26px] hover:text-white text-gray-400`}
+                  onClick={updateSideMenu}
+                />
+              )}
+            </div>
+          )}
         </div>
 
         {/* side bar menu */}
@@ -425,6 +422,23 @@ const Header = () => {
                     onClick={updateSideMenu}
                   >
                     Dashboard
+                  </Link>
+                </motion.div>
+              )}
+
+              {user && user.accountType == "Student" && isTabletOrSmaller && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="w-full"
+                >
+                  <Link
+                    to="/cart"
+                    className="block text-[18px] hover:text-dark_red hover:bg-gray-800 w-full text-left px-4 py-3 rounded-md transition-all duration-300 transform hover:translate-x-1"
+                    onClick={updateSideMenu}
+                  >
+                    Cart
                   </Link>
                 </motion.div>
               )}

@@ -1,4 +1,3 @@
-import React from "react";
 
 const Paragraph_2 = ({ data, container = "false", back }) => {
   return (
@@ -7,8 +6,8 @@ const Paragraph_2 = ({ data, container = "false", back }) => {
         className={`${
           back == "white" ? "text-gray-700" : "text-[#b1b1b1]"
         } text-[18px] m-auto max-w-[1200px] ${
-          container == "true" ? "text-start w-full" : "text-center w-[90%]"
-        } tablet:text-[20px] tracking-wide`}
+          container == "true" ? "w-full" : " w-[90%]"
+        } tablet:text-[20px] tracking-wide text-center tablet:text-start`}
       >
         {data}
       </p>

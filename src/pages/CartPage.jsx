@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { apiConnector } from "../services/apiConnector";
 import { apiLinks } from "../services/apiLink";
-import CourseCard from "../components/dashBoardpage/CourseCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setCartCourses } from "../redux/slices/applicationSlice";
 import { toast } from "react-toastify";
 import { buyCourse } from "../services/razorPayIntegration";
 import { useNavigate } from "react-router-dom";
 import { setPaymentLoading } from "../redux/slices/profileSlice";
+
+// Lazy load CourseCard
+const CourseCard = React.lazy(() =>
+  import("../components/dashBoardpage/CourseCard")
+);
 
 const SpinnerLoader = () => {
   return (
@@ -159,10 +163,12 @@ const CartPage = () => {
 
   return (
     <div className="flex flex-col justify-center items-center gap-8 p-6">
-      <div className="flex justify-center items-center gap-5 flex-wrap p-5 text-gray-300">
-        {cartCourses?.map((value, index) => (
-          <CourseCard id={value._id} course={value} key={index} />
-        ))}
+      <div className="flex justify-center items-center gap-6 w-full flex-wrap p-5 text-gray-300">
+        <Suspense fallback={<SpinnerLoader />}>
+          {cartCourses?.map((value, index) => (
+            <CourseCard course={value} id={value._id} key={index} />
+          ))}
+        </Suspense>
       </div>
 
       <div className="w-full max-w-4xl bg-gray-800 rounded-lg p-6 shadow-lg">
@@ -171,7 +177,7 @@ const CartPage = () => {
           <button
             onClick={handleResetCart}
             disabled={loading}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50"
+            className="px-4 py-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50"
           >
             {loading ? "Processing..." : "Reset Cart"}
           </button>
@@ -198,8 +204,10 @@ const CartPage = () => {
 
         <button
           onClick={handlePayment}
-          disabled={loading || cartCourses.length === 0 || purchaseButtonLoading}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+          disabled={
+            loading || cartCourses.length === 0 || purchaseButtonLoading
+          }
+          className="w-full py-3 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
         >
           {purchaseButtonLoading ? (
             <>

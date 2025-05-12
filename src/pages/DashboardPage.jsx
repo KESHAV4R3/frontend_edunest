@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FaUser } from "react-icons/fa";
 import { IoMdSettings } from "react-icons/io";
 import { MdKeyboardArrowDown, MdLogout, MdDelete } from "react-icons/md";
@@ -29,105 +29,95 @@ const DashboardPage = () => {
 
   const { user } = useSelector((state) => state.profile);
 
-  // Dynamically generate nav items based on user role
-  const navItems = [
-    {
-      id: "My Profile",
-      icon: <FaUser />,
-      label: "My Profile",
-      path: "/dashboard",
-    },
-    {
-      id: "Course",
-      icon: <IoBookSharp />,
-      label:
-        user?.accountType === "Instructor"
-          ? "Course Created"
-          : user?.accountType === "Admin"
-          ? "All Courses"
-          : "Course Enrolled",
-      path: "/dashboard/courses",
-    },
-    ...(user?.accountType === "Instructor"
-      ? [
-          {
-            id: "Create new course",
-            icon: <MdOutlineCreateNewFolder />,
-            label: "Create new course",
-            path: "/dashboard/create-new-course",
-          },
-        ]
-      : []),
-    ...(user?.accountType != "Admin"
-      ? [
-          {
-            id: "Account Setting",
-            icon: <IoMdSettings />,
-            label: "Account Setting",
-            path: "/dashboard/accout-setting",
-          },
-        ]
-      : []),
-    {
-      id: "Instructors",
-      icon: <PiChalkboardTeacherLight />,
-      label: "Instructors",
-      path: "/dashboard/instructors-see-all",
-      adminOnly: true,
-    },
-    {
-      id: "Students",
-      icon: <PiStudentFill />,
-      label: "Students",
-      path: "/dashboard/student-see-all",
-      adminOnly: true,
-    },
-    {
-      id: "Add Catagory",
-      icon: <BiCategory />,
-      label: "Add Catagory",
-      path: "/dashboard/add-catagory",
-      adminOnly: true,
-    },
-    {
-      id: "Delete catagory",
-      icon: <MdDelete />,
-      label: "Delete catagory",
-      path: "/dashboard/delete-catagory",
-      adminOnly: true,
-    },
-    {
-      id: "log Out",
-      icon: <MdLogout />,
-      label: "Log Out",
-    },
-  ];
+  const navItems = useMemo(() => {
+    if (!user) return [];
+    return [
+      {
+        id: "My Profile",
+        icon: <FaUser />,
+        label: "My Profile",
+        path: "/dashboard",
+      },
+      {
+        id: "Course",
+        icon: <IoBookSharp />,
+        label:
+          user.accountType === "Instructor"
+            ? "Course Created"
+            : user.accountType === "Admin"
+            ? "All Courses"
+            : "Course Enrolled",
+        path: "/dashboard/courses",
+      },
+      ...(user.accountType === "Instructor"
+        ? [
+            {
+              id: "Create new course",
+              icon: <MdOutlineCreateNewFolder />,
+              label: "Create new course",
+              path: "/dashboard/create-new-course",
+            },
+          ]
+        : []),
+      ...(user.accountType !== "Admin"
+        ? [
+            {
+              id: "Account Setting",
+              icon: <IoMdSettings />,
+              label: "Account Setting",
+              path: "/dashboard/accout-setting",
+            },
+          ]
+        : []),
+      {
+        id: "Instructors",
+        icon: <PiChalkboardTeacherLight />,
+        label: "Instructors",
+        path: "/dashboard/instructors-see-all",
+        adminOnly: true,
+      },
+      {
+        id: "Students",
+        icon: <PiStudentFill />,
+        label: "Students",
+        path: "/dashboard/student-see-all",
+        adminOnly: true,
+      },
+      {
+        id: "Add Category",
+        icon: <BiCategory />,
+        label: "Add Category",
+        path: "/dashboard/add-catagory",
+        adminOnly: true,
+      },
+      {
+        id: "Delete Category",
+        icon: <MdDelete />,
+        label: "Delete Category",
+        path: "/dashboard/delete-catagory",
+        adminOnly: true,
+      },
+      {
+        id: "log Out",
+        icon: <MdLogout />,
+        label: "Log Out",
+      },
+    ];
+  }, [user]);
 
   const logout = async () => {
     try {
       const response = await apiConnector("POST", apiLinks.logout);
       if (!response.success) {
-        toast.error("Unable to log-out", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
+        toast.error("Unable to log-out");
       } else {
-        toast.success("Log-out successful", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        navigate('/')
+        toast.success("Log-out successful");
         dispatch(setProfile(null));
         dispatch(setPersonalData(null));
+        navigate("/");
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -150,8 +140,6 @@ const DashboardPage = () => {
       const response = await apiConnector("GET", apiLinks.getAllStudents);
       if (response.success) {
         dispatch(setAllStudents(response.students));
-      } else {
-        console.log(response.message);
       }
     } catch (error) {
       console.error(error);
@@ -163,8 +151,6 @@ const DashboardPage = () => {
       const response = await apiConnector("GET", apiLinks.getAllInstructors);
       if (response.success) {
         dispatch(setAllInstructors(response.instructors));
-      } else {
-        console.log(response.message);
       }
     } catch (error) {
       console.error(error);
@@ -183,81 +169,57 @@ const DashboardPage = () => {
     }
   }, [user]);
 
+  const handleNavClick = (item) => {
+    setActiveTab(item.id);
+    setMobileMenuOpen(false);
+    if (item.path) navigate(item.path);
+    if (item.id === "log Out") logout();
+  };
+
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center h-screen text-white bg-gray-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-600"></div>
       </div>
     );
   }
 
-  // Animation variants for cleaner code
-  const buttonVariants = {
-    initial: { opacity: 0, x: -10 },
-    animate: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.3, ease: "easeOut" },
-    },
+  const motionVariants = {
     hover: { scale: 1.03 },
-    tap: { scale: 0.98 },
-    active: {
-      backgroundColor: "rgba(55, 65, 81, 1)", // bg-gray-700
-      color: "#ef4444", // text-red-500
-      boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.25)",
-    },
-  };
-
-  const iconVariants = {
-    hover: (active) => ({
-      scale: active ? 1.15 : 1.1,
-      rotate: active ? 0 : 5,
-    }),
-  };
-
-  const textVariants = {
-    hover: (active) => ({
-      x: active ? 3 : 2,
-    }),
+    tap: { scale: 0.97 },
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      {/* Mobile Top Navigation */}
-      <header className="overflow-y-auto md:hidden bg-gray-800 flex flex-col top-0 z-20">
+      {/* Mobile Nav */}
+      <header className="md:hidden bg-gray-800 sticky top-0 z-20">
         <div className="flex justify-between items-center p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold text-red-500">Dashboard</h1>
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
             className="p-2 rounded-lg hover:bg-gray-700"
           >
             <MdKeyboardArrowDown className="text-xl" />
           </button>
         </div>
 
-        {/* Mobile Navigation Options */}
         <div
-          className={`bg-gray-800 flex justify-evenly ${
+          className={`transition-all duration-300 ease-in-out ${
             mobileMenuOpen ? "block" : "hidden"
           }`}
         >
-          <div className="flex scrollbar-hide overflow-x-auto">
+          <div className="flex overflow-x-auto scrollbar-hide bg-gray-800">
             {navItems.map((item) => {
-              if (item.adminOnly && user?.accountType !== "Admin") return null;
-
+              if (item.adminOnly && user.accountType !== "Admin") return null;
               return (
                 <button
                   key={item.id}
-                  className={`flex cursor-pointer flex-col items-center justify-center p-4 min-w-[80px] ${
+                  onClick={() => handleNavClick(item)}
+                  className={`flex flex-col items-center p-4 min-w-[80px] ${
                     activeTab === item.id
                       ? "text-red-500 border-b-2 border-red-500"
                       : "text-gray-400 hover:text-white"
                   }`}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    if (item.path) navigate(item.path);
-                    if (item.id === "log Out") logout();
-                  }}
                 >
                   <span className="text-lg mb-1">{item.icon}</span>
                   <span className="text-xs">{item.label}</span>
@@ -274,54 +236,34 @@ const DashboardPage = () => {
           <div className="flex items-center justify-center p-4 border-b border-gray-700">
             <h1 className="text-2xl font-bold text-red-500">Dashboard</h1>
           </div>
-          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
             {navItems.map((item) => {
-              if (item.adminOnly && user?.accountType !== "Admin") return null;
-
+              if (item.adminOnly && user.accountType !== "Admin") return null;
               return (
                 <motion.button
                   key={item.id}
-                  variants={buttonVariants}
-                  initial="initial"
-                  animate="animate"
+                  onClick={() => handleNavClick(item)}
                   whileHover="hover"
                   whileTap="tap"
-                  custom={activeTab === item.id}
-                  className={`cursor-pointer flex w-full items-center p-3 rounded-lg text-left ${
+                  variants={motionVariants}
+                  className={`flex items-center w-full p-3 rounded-lg text-left transition-colors duration-200 ${
                     activeTab === item.id
-                      ? "active-state"
-                      : "text-gray-400 hover:bg-gray-700 hover:text-white"
+                      ? "bg-gray-700 text-red-500"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700"
                   }`}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    if (item.path) navigate(item.path);
-                    if (item.id === "log Out") logout();
-                  }}
                 >
-                  <motion.span
-                    className="mr-3"
-                    variants={iconVariants}
-                    custom={activeTab === item.id}
-                  >
-                    {item.icon}
-                  </motion.span>
-
-                  <motion.span
-                    variants={textVariants}
-                    custom={activeTab === item.id}
-                  >
-                    {item.label}
-                  </motion.span>
+                  <span className="mr-3">{item.icon}</span>
+                  <span>{item.label}</span>
                 </motion.button>
               );
             })}
           </nav>
         </aside>
 
-        {/* Render Nested Routes */}
-        <div className="flex-1 p-4 overflow-y-auto">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

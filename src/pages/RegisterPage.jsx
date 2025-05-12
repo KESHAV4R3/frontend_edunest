@@ -43,9 +43,9 @@ const RegisterPage = () => {
     accountType: "Student",
   });
 
-  useEffect(()=>{
+  useEffect(() => {
     localStorage.removeItem("registrationData");
-  },[])
+  }, []);
   // Update the role
   const updateRole = useCallback((index) => {
     setCurrentRole(roles[index]);
@@ -86,11 +86,8 @@ const RegisterPage = () => {
   // function send otp to owner
   async function sendOtpOwner() {
     try {
-      const response = await apiConnector(
-        "POST",
-        apiLinks.sendOtp_owner
-      );
-      alert(response.message)
+      const response = await apiConnector("POST", apiLinks.sendOtp_owner);
+      alert(response.message);
       return response;
     } catch (error) {}
   }
@@ -391,15 +388,15 @@ const RegisterPage = () => {
                 </>
               )}
             </button>
-          </form>
 
-          {/* Login Link */}
-          <p className="text-gray-400 mt-4">
-            Already have an account?{" "}
-            <Link to="/login" className="text-dark_red hover:text-red-500">
-              Login here
-            </Link>
-          </p>
+            {/* Login Link */}
+            <p className="text-gray-400 mt-1 flex justify-end gap-2" >
+              Already have an account?{" "}
+              <Link to="/login" className="text-dark_red hover:text-red-500">
+                Login here
+              </Link>
+            </p>
+          </form>
         </div>
       </div>
     </div>

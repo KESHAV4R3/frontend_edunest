@@ -40,7 +40,7 @@ const ReviewSection = () => {
     },
   ];
 
-  const createInfiniteArray = (arr, repetitions = 10) => {
+  const createInfiniteArray = (arr, repetitions = 30) => {
     let result = [];
     for (let i = 0; i < repetitions; i++) {
       result = [...result, ...arr];

@@ -16,6 +16,12 @@ const CourseCompleteViewByStudent = () => {
   const [openSections, setOpenSections] = useState({});
   const videoRef = useRef(null);
 
+  // Comment-related states
+  const [comment, setComment] = useState("");
+  const [rating, setRating] = useState(1);
+  const [commentError, setCommentError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   useEffect(() => {
     async function fetchCourseDetail() {
       try {
@@ -64,6 +70,32 @@ const CourseCompleteViewByStudent = () => {
     }));
   };
 
+  const handleCommentSubmit = (e) => {
+    e.preventDefault();
+
+    if (comment.length > 80) {
+      setCommentError("Comment should not exceed 80 characters.");
+      return;
+    }
+
+    if (rating < 1 || rating > 5) {
+      setCommentError("Rating must be between 1 and 5.");
+      return;
+    }
+
+    // Simulate submit
+    console.log("Comment submitted:", { comment, rating });
+
+    // Reset form and show success message
+    setComment("");
+    setRating(1);
+    setCommentError("");
+    setSubmitSuccess(true);
+
+    // Hide success message after 3s
+    setTimeout(() => setSubmitSuccess(false), 3000);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-900">
@@ -90,7 +122,7 @@ const CourseCompleteViewByStudent = () => {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Video Section */}
           <div className="md:w-2/3">
-            <div className="bg-black rounded-lg overflow-hidden aspect-video mb-4">
+            <div className="bg-black rounded-lg overflow-hidden aspect-video mb-4 shadow-xl">
               {currentSubSection ? (
                 <>
                   {videoLoading && (
@@ -107,7 +139,6 @@ const CourseCompleteViewByStudent = () => {
                     onPlaying={() => setVideoLoading(false)}
                     controlsList="nodownload"
                   >
-                    {/* Use the new API endpoint for streaming */}
                     <source
                       src={apiLinks.streamVideo + `/${currentSubSection._id}`}
                       type="video/mp4"
@@ -123,13 +154,61 @@ const CourseCompleteViewByStudent = () => {
             </div>
 
             <div className="bg-gray-900 rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4 text-white">
+              <h2 className="text-2xl font-bold mb-4 text-white">
                 {currentSection?.name || "Section"}
               </h2>
-              <p className="text-gray-300">
+              <p className="text-gray-300 text-lg">
                 {currentSubSection?.description ||
                   "Select a video to get started"}
               </p>
+            </div>
+            {/* Comment Form */}
+            <div className="mt-6 bg-gray-800 p-6 rounded-md shadow-lg">
+              <h3 className="text-xl font-semibold mb-2 text-white">
+                Leave a Comment
+              </h3>
+              {submitSuccess && (
+                <p className="text-green-400 text-sm mb-2">
+                  Comment submitted successfully!
+                </p>
+              )}
+              <form onSubmit={handleCommentSubmit}>
+                <textarea
+                  className="w-full p-3 rounded-md bg-gray-900 text-white border border-gray-600 focus:outline-none"
+                  rows="4"
+                  placeholder="Write your comment..."
+                  maxLength={80}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                ></textarea>
+
+                <div className="mt-4 flex items-center gap-6">
+                  <label htmlFor="rating" className="text-sm text-gray-300">
+                    Rating:
+                  </label>
+                  <select
+                    id="rating"
+                    className="bg-gray-900 text-white border border-gray-600 p-2 rounded-md"
+                    value={rating}
+                    onChange={(e) => setRating(Number(e.target.value))}
+                  >
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <option key={num} value={num}>
+                        {num}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="ml-auto bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md text-sm transition-colors"
+                  >
+                    Submit
+                  </button>
+                </div>
+                {commentError && (
+                  <p className="text-red-400 text-sm mt-2">{commentError}</p>
+                )}
+              </form>
             </div>
           </div>
 
@@ -137,7 +216,7 @@ const CourseCompleteViewByStudent = () => {
           <div className="md:w-1/3">
             <div className="rounded-lg shadow-md border border-gray-700">
               <div className="p-4 bg-blue-800 text-white rounded-t-lg">
-                <h2 className="text-lg font-semibold">Course Content</h2>
+                <h2 className="text-xl font-semibold">Course Content</h2>
               </div>
 
               <div className="divide-y divide-gray-800 max-h-[600px] overflow-y-auto bg-gray-900">
@@ -151,7 +230,6 @@ const CourseCompleteViewByStudent = () => {
                       }`}
                       onClick={() => {
                         toggleSection(sectionIndex);
-                        // handleSubSectionClick(sectionIndex, 0);
                       }}
                     >
                       <h3
@@ -178,7 +256,7 @@ const CourseCompleteViewByStudent = () => {
                           (subSection, subSectionIndex) => (
                             <div
                               key={subSection._id}
-                              className={`flex items-center py-2 px-3 rounded-md cursor-pointer transition ${
+                              className={`flex items-center py-2 px-3 rounded-md cursor-pointer transition-all ${
                                 activeSection === sectionIndex &&
                                 activeSubSection === subSectionIndex
                                   ? "bg-blue-700 text-white"

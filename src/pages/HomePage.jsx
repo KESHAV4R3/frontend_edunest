@@ -7,7 +7,7 @@ import Footer from "../components/application/Footer";
 
 const HomePage = () => {
   return (
-    <div className="max-w-[1500px] min-w-[390px] m-auto">
+    <div className="max-w-[1500px] min-w-[370px] m-auto">
       <HeroSection />
       <BenefitSection />
       <InstructorSection />

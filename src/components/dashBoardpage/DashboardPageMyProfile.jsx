@@ -132,44 +132,16 @@ const DashboardPageMyProfile = () => {
     }
   };
 
-  const logout = async () => {
-    try {
-      const response = await apiConnector("POST", apiLinks.logout);
-      if (!response.success) {
-        toast.error("Unable to log-out", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-      } else {
-        toast.success("Log-out successful", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        dispatch(setProfile(null));
-        dispatch(setPersonalData(null));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-
   return (
-    <div className="w-[96%] m-auto md:w-[80%] mt-10">
+    <div className="w-[96%] m-auto md:w-[90%] mt-10">
       <p className="text-4xl font-[600] text-gray-300 w-full md:w-[90%] text-center md:text-start mb-5 m-auto">
-        My Profile {user.accountType}
+        My Profile ( {user.accountType} )
       </p>
 
       {/* profile */}
       {editMyProfile ? (
         // display my profile
-        <div className="bg-gray-800 relative flex flex-col tablet2:flex-row justify-between p-5 gap-5 items-start tablet2:items-center w-full md:w-[90%] m-auto md:p-10 rounded-lg">
+        <div className="bg-gray-800 relative flex flex-col tablet2:flex-row justify-between p-5 gap-5 items-start tablet2:items-center w-full tablet2:w-[90%] m-auto md:p-10 rounded-lg">
           {/* Close Icon */}
           <div
             className="absolute top-3 right-3 cursor-pointer text-gray-400 text-[20px] hover:text-white"
@@ -242,26 +214,34 @@ const DashboardPageMyProfile = () => {
           )}
         </div>
       ) : (
-        <div className="bg-gray-800 flex flex-col md:flex-row justify-between gap-5 items-center w-full md:w-[90%] m-auto md:p-10 p-5 rounded-lg">
-          <div className="flex gap-5">
-            <img
-              src={user.image}
-              alt="user_img"
-              className="rounded-full w-[80px] h-[80px]"
-            />
-            <div className="flex flex-col justify-center items-start">
-              <p className="text-[25px]">{user.name}</p>
-              <p className="text-[16px] text-gray-400">{user.email}</p>
+        <div className="bg-gray-800 flex flex-col tablet2:flex-row tablet2:justify-between gap-5 tablet2:items-center w-full tablet2:w-[90%] m-auto tablet2:p-10 p-5 rounded-lg">
+          {/* Profile Info and Edit Button in a flex column for smaller screens */}
+          <div className="w-full flex flex-col tablet2:flex-row justify-between items-start tablet2:items-center gap-5">
+            {/* Profile Info */}
+            <div className="flex gap-5 items-center w-full">
+              <img
+                src={user.image}
+                alt="user_img"
+                className="rounded-full w-[80px] h-[80px]"
+              />
+              <div className="flex flex-col">
+                <p className="text-[20px] md:text-[25px]">{user.name}</p>
+                <p className="text-[14px] md:text-[16px] text-gray-400">
+                  {user.email}
+                </p>
+              </div>
             </div>
-          </div>
-          <div
-            onClick={() => {
-              setEditMyProfile(true);
-            }}
-            className="flex justify-center items-center gap-3 rounded-lg w-full md:w-[100px] h-[50px] cursor-pointer bg-dark_red hover:bg-red-600"
-          >
-            <FaEdit className="text-[17px]" />
-            <p className="text-[17px]">Edit</p>
+
+            {/* Edit Button */}
+            <div
+              onClick={() => {
+                setEditMyProfile(true);
+              }}
+              className="flex justify-center items-center gap-2 mt-4 tablet2:mt-0 tablet2:ml-auto rounded-lg w-full tablet2:w-auto h-[45px] cursor-pointer bg-dark_red hover:bg-red-600 px-4"
+            >
+              <FaEdit className="text-[16px]" />
+              <p className="text-[16px]">Edit</p>
+            </div>
           </div>
         </div>
       )}
@@ -457,7 +437,7 @@ const DashboardPageMyProfile = () => {
               onClick={() => {
                 setEditPersonalInfo(true);
               }}
-              className="flex items-center justify-center gap-2 rounded-lg w-full md:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 transition-colors"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg w-full md:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 transition-colors"
             >
               <FaEdit className="text-lg" />
               <span className="text-lg">Edit Profile</span>
@@ -465,8 +445,6 @@ const DashboardPageMyProfile = () => {
           </div>
         </div>
       )}
-
-   
     </div>
   );
 };

@@ -1,34 +1,69 @@
 import React from "react";
-import { para7_1, para7_2 } from "../../data/heroSectionCategoryData";
-import Paragraph_1 from "./Paragraph_1";
-import Paragraph_2 from "./Paragraph_2";
-import Button from "../application/Button";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
+const para7_1 = ["Become an Instructor", "Inspire learners around the world"];
+const para7_2 =
+  "Join our global community of educators and empower students by sharing your expertise. Whether you're experienced or just starting, you can make a difference.";
+
 const InstructorSection = () => {
-  const navigate=useNavigate()
+  const navigate = useNavigate();
+
   return (
-    <div>
-      <div className="bg-dark_bg flex justify-center items-center flex-wrap gap-10 p-10">
-        <div className="w-full tablet2:w-[45%] pt-20 ">
+    <section className="bg-dark_bg py-16 px-4 tablet:px-10 w-full">
+      <div className="max-w-7xl mx-auto flex flex-col tablet2:flex-row items-center justify-between gap-14">
+
+        {/* Left Animated Image */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7 }}
+          viewport={{ once: true }}
+          className="w-full tablet2:w-[48%]"
+        >
           <img
             src="https://res.cloudinary.com/dort5nnis/image/upload/v1742982075/portrait-smiling-senior-businessman-library_yyt0ek.jpg"
-            className="w-full h-full object-contain rounded-lg shadow-[0_0_40px_25px_rgba(96,165,250,0.1)]"
+            alt="Instructor"
+            className="w-full h-auto rounded-2xl object-cover shadow-[0_0_40px_10px_rgba(255,255,255,0.1)] hover:scale-105 transition-transform duration-300"
+            loading="lazy"
           />
-        </div>
-        <div className="w-full tablet2:w-[45%] flex justify-center items-center flex-col gap-10">
-          <div className="flex flex-col">
-            <Paragraph_1
-              data1={para7_1[0]}
-              data2={para7_1[1]}
-              container="true"
-            />
-            <Paragraph_2 data={para7_2} container="true" />
+        </motion.div>
+
+        {/* Right Animated Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          viewport={{ once: true }}
+          className="w-full tablet2:w-[48%] flex flex-col items-center gap-8 text-center"
+        >
+          {/* Main Heading */}
+          <div>
+            <h2 className="text-white text-3xl tablet:text-4xl font-bold">
+              {para7_1[0]}
+            </h2>
+            <p className="text-lg text-gray-300 mt-2">{para7_1[1]}</p>
           </div>
-          <div onClick={()=>{navigate('/register')}}><Button data="Start teaching today" color="red" /></div>
-          
-        </div>
+
+          {/* Description */}
+          <div>
+            <p className="text-base text-gray-400 max-w-[550px] mx-auto leading-relaxed">
+              {para7_2}
+            </p>
+          </div>
+
+          {/* Button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/register")}
+            className="px-6 py-3 rounded-full text-white font-semibold bg-red-600 hover:bg-red-700 transition duration-300 shadow-lg"
+          >
+            Start teaching today
+          </motion.button>
+        </motion.div>
       </div>
-    </div>
+    </section>
   );
 };
 
