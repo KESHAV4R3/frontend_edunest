@@ -295,79 +295,85 @@ const DashboardInstructorCreateNewSubsection = () => {
             {subsections.map((subsection) => (
               <div
                 key={subsection._id}
-                className="w-full space-y-3 p-4 border border-gray-700 rounded-lg bg-gray-800"
+                className="w-full space-y-4 p-4 border border-gray-700 rounded-lg bg-gray-800"
               >
-                {/* Title */}
-                <div className="w-full">
-                  <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                    Title
-                  </p>
-                  {editingSubsectionId === subsection._id ? (
-                    <input
-                      type="text"
-                      name="title"
-                      value={editedSubsection.title}
-                      onChange={handleEditInputChange}
-                      className="w-full mt-2 p-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:border-2 outline-none"
-                    />
-                  ) : (
-                    <h3 className="text-xl font-bold text-white mt-1">
-                      {subsection.title}
-                    </h3>
-                  )}
-                </div>
+                {/* Responsive Flex: Text + Video */}
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Text Content */}
+                  <div className="flex-1 space-y-4">
+                    {/* Title */}
+                    <div>
+                      <p className="text-sm font-medium underline-offset-2 underline text-gray-400 uppercase tracking-wider">
+                        Title
+                      </p>
+                      {editingSubsectionId === subsection._id ? (
+                        <input
+                          type="text"
+                          name="title"
+                          value={editedSubsection.title}
+                          onChange={handleEditInputChange}
+                          className="w-full mt-2 p-2 bg-gray-700 border  border-gray-600 text-white rounded-md focus:border-2 outline-none"
+                        />
+                      ) : (
+                        <h3 className="text-xl font-bold text-white mt-1">
+                          {subsection.title}
+                        </h3>
+                      )}
+                    </div>
 
-                {/* Time Duration */}
-                <div>
-                  <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                    Duration
-                  </p>
-                  {editingSubsectionId === subsection._id ? (
-                    <input
-                      type="text"
-                      name="timeDuration"
-                      value={editedSubsection.timeDuration}
-                      onChange={handleEditInputChange}
-                      className="w-full mt-2 p-2 bg-gray-700 border border-gray-600 outline-none text-white rounded-md focus:border-2"
-                    />
-                  ) : (
-                    <p className="text-gray-300 mt-1">
-                      {subsection.timeDuration || "No duration specified"}
+                    {/* Duration */}
+                    <div>
+                      <p className="text-sm font-medium underline-offset-2 underline text-gray-400 uppercase tracking-wider">
+                        Duration
+                      </p>
+                      {editingSubsectionId === subsection._id ? (
+                        <input
+                          type="text"
+                          name="timeDuration"
+                          value={editedSubsection.timeDuration}
+                          onChange={handleEditInputChange}
+                          className="w-full mt-2 p-2 bg-gray-700 border border-gray-600 outline-none text-white rounded-md focus:border-2"
+                        />
+                      ) : (
+                        <p className="text-gray-300 mt-1">
+                          {subsection.timeDuration || "No duration specified"}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <p className="text-sm font-medium underline-offset-2 underline text-gray-400 uppercase tracking-wider">
+                        Description
+                      </p>
+                      {editingSubsectionId === subsection._id ? (
+                        <textarea
+                          name="description"
+                          value={editedSubsection.description}
+                          onChange={handleEditInputChange}
+                          className="w-full mt-2 p-2 bg-gray-700 border outline-none border-gray-600 text-white rounded-md focus:border-2"
+                          rows="3"
+                        />
+                      ) : (
+                        <p className="text-gray-300 mt-1">
+                          {subsection.description || "No description provided"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Responsive Video */}
+                  <div className="w-full md:w-[300px] flex-shrink-0">
+                    <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                      Video
                     </p>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div>
-                  <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                    Description
-                  </p>
-                  {editingSubsectionId === subsection._id ? (
-                    <textarea
-                      name="description"
-                      value={editedSubsection.description}
-                      onChange={handleEditInputChange}
-                      className="w-full mt-2 p-2 bg-gray-700 border outline-none border-gray-600 text-white rounded-md focus:border-2"
-                      rows="3"
-                    />
-                  ) : (
-                    <p className="text-gray-300 mt-1">
-                      {subsection.description || "No description provided"}
-                    </p>
-                  )}
-                </div>
-
-                {/* Video */}
-                <div>
-                  <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                    Video
-                  </p>
-                  <div className="relative pt-[56.25%] mt-2 bg-black rounded-md">
-                    <video
-                      controls
-                      className="absolute inset-0 w-full h-full"
-                      src={subsection.videoUrl}
-                    />
+                    <div className="mt-2 rounded-md overflow-hidden bg-black aspect-video">
+                      <video
+                        controls
+                        className="w-full h-full object-cover"
+                        src={subsection.videoUrl}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -559,7 +565,7 @@ const DashboardInstructorCreateNewSubsection = () => {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end space-x-3">
+          <div className="pt-4 flex gap-2 flex-wrap items-center justify-center space-x-3">
             <button
               type="button"
               onClick={() => navigate(-1)}

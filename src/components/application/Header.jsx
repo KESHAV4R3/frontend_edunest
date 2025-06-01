@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import edunest_logo from "../../assets/edunest_logo.png";
 import { IoIosSearch, IoMdMenu } from "react-icons/io";
 import { MdKeyboardArrowDown } from "react-icons/md";
@@ -38,6 +38,7 @@ const Header = () => {
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  console.log(catagories)
   // to update side menu
   const updateSideMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
@@ -241,7 +242,7 @@ const Header = () => {
                   onMouseLeave={() => setCatalogDisplay(false)}
                 >
                   <div className="grid grid-cols-4 gap-6">
-                    {catagories.map((category, index) => (
+                    {catagories?.map((category, index) => (
                       <Link
                         to={`/category/${category.name}?catagory_id=${category._id}`}
                         key={index}
@@ -313,21 +314,19 @@ const Header = () => {
               </div>
             )}
           </div>
-          {user && (
-            <div className="cursor-pointer">
-              {menuOpen ? (
-                <RxCross1
-                  className="text-gray-400 text-[26px] hover:text-white"
-                  onClick={updateSideMenu}
-                />
-              ) : (
-                <IoMdMenu
-                  className={`text-[26px] hover:text-white text-gray-400`}
-                  onClick={updateSideMenu}
-                />
-              )}
-            </div>
-          )}
+          <div className="cursor-pointer">
+            {menuOpen ? (
+              <RxCross1
+                className="text-gray-400 text-[26px] hover:text-white"
+                onClick={updateSideMenu}
+              />
+            ) : (
+              <IoMdMenu
+                className={`text-[26px] hover:text-white text-gray-400`}
+                onClick={updateSideMenu}
+              />
+            )}
+          </div>
         </div>
 
         {/* side bar menu */}
@@ -426,23 +425,6 @@ const Header = () => {
                 </motion.div>
               )}
 
-              {user && user.accountType == "Student" && isTabletOrSmaller && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="w-full"
-                >
-                  <Link
-                    to="/cart"
-                    className="block text-[18px] hover:text-dark_red hover:bg-gray-800 w-full text-left px-4 py-3 rounded-md transition-all duration-300 transform hover:translate-x-1"
-                    onClick={updateSideMenu}
-                  >
-                    Cart
-                  </Link>
-                </motion.div>
-              )}
-
               {user && (
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
@@ -476,6 +458,24 @@ const Header = () => {
                 </motion.div>
               )}
 
+              {user && isTabletOrSmaller && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="w-full"
+                >
+                  <p
+                    className="cursor-pointer text-[18px] hover:text-dark_red hover:bg-gray-800 w-full text-left px-4 py-3 rounded-md transition-all duration-300 transform hover:translate-x-1"
+                    onClick={() => {
+                      navigate("/cart");
+                    }}
+                  >
+                    Cart
+                  </p>
+                </motion.div>
+              )}
+
               {isTabletOrSmaller && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -499,7 +499,7 @@ const Header = () => {
                       )}
                     </motion.div>
                   </div>
-                  <AnimatePresence>
+                  <AnimatePresence mode="sync">
                     {sideBarCatagoryOpen && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}

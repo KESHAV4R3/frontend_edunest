@@ -310,12 +310,12 @@ const DashboardInstructorCreateNewCourse = () => {
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={currentPoint}
               onChange={(e) => setCurrentPoint(e.target.value)}
-              className="flex-1 px-3 py-2 border-gray-300 outline-none border rounded-lg focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full sm:flex-1 px-3 py-2 border-gray-300 outline-none border rounded-lg focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="Add a new learning point"
             />
             <button
@@ -323,7 +323,7 @@ const DashboardInstructorCreateNewCourse = () => {
               onClick={() => {
                 addLearningPoint(currentPoint);
               }}
-              className="px-4 py-2 cursor-pointer bg-dark_red hover:bg-dark_red/80 text-white rounded-lg transition-colors"
+              className="w-full sm:w-auto px-4 py-2 cursor-pointer bg-dark_red hover:bg-dark_red/80 text-white rounded-lg transition-colors"
             >
               Add Point
             </button>

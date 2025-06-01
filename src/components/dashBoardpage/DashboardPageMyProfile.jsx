@@ -135,7 +135,7 @@ const DashboardPageMyProfile = () => {
   return (
     <div className="w-[96%] m-auto md:w-[90%] mt-10">
       <p className="text-4xl font-[600] text-gray-300 w-full md:w-[90%] text-center md:text-start mb-5 m-auto">
-        My Profile ( {user.accountType} )
+        My Profile
       </p>
 
       {/* profile */}

@@ -275,75 +275,80 @@ const DashboardInstructorCreateNewSection = () => {
                   )}
                 </div>
 
-                <div className="pt-3 mt-3 cursor-pointer border-t border-gray-700 flex justify-end space-x-3">
-                  {editingSectionId === section._id && (
-                    <button
-                      onClick={() => cancelEdit(section._id)}
-                      type="button"
-                      className="px-3 gap-2 py-1.5 text-sm cursor-pointer rounded-md bg-orange-900/50 text-orange-400 hover:bg-orange-800/50 hover:text-orange-300 transition-all flex items-center"
-                    >
-                      <MdCancel />
-                      Cancel Edit
-                    </button>
-                  )}
+                <div className="pt-3 mt-3 border-t border-gray-700">
+                  {/* Flex container that changes direction based on screen size */}
+                  <div className="flex flex-row flex-wrap gap-2 sm:gap-3">
+                    {editingSectionId === section._id && (
+                      <button
+                        onClick={() => cancelEdit(section._id)}
+                        type="button"
+                        className="flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-orange-900/50 text-orange-400 hover:bg-orange-800/50 hover:text-orange-300 transition-all flex items-center justify-center min-w-[120px]"
+                      >
+                        <MdCancel />
+                        <span className="whitespace-nowrap">Cancel Edit</span>
+                      </button>
+                    )}
 
-                  {editingSectionId === section._id && (
-                    <button
-                      onClick={updateSectionAPICall}
-                      type="button"
-                      disabled={saveEditLoading}
-                      className="px-3 gap-2 py-1.5 text-sm cursor-pointer rounded-md disabled:cursor-not-allowed bg-pink-900/10 text-pink-400 hover:bg-pink-800/50 hover:text-pink-300 transition-all flex items-center"
-                    >
-                      <MdOutlineSystemSecurityUpdateGood />
-                      Save Edit
-                    </button>
-                  )}
+                    {editingSectionId === section._id && (
+                      <button
+                        onClick={updateSectionAPICall}
+                        type="button"
+                        disabled={saveEditLoading}
+                        className="flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md disabled:cursor-not-allowed bg-pink-900/10 text-pink-400 hover:bg-pink-800/50 hover:text-pink-300 transition-all flex items-center justify-center min-w-[120px]"
+                      >
+                        <MdOutlineSystemSecurityUpdateGood />
+                        <span className="whitespace-nowrap">Save Edit</span>
+                      </button>
+                    )}
 
-                  <button
-                    onClick={() => startEditing(section)}
-                    type="button"
-                    disabled={editingSectionId !== null}
-                    className={`px-3 gap-2 py-1.5  text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 hover:text-blue-300 transition-all flex items-center ${
-                      editingSectionId !== null
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                  >
-                    <FaRegEdit />
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={editingSectionId !== null || deleteLoading}
-                    onClick={() => {
-                      deleteSection(section);
-                    }}
-                    className={`px-3 py-1.5 gap-1 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 hover:text-red-300 transition-all flex items-center ${
-                      editingSectionId !== null
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                  >
-                    <MdDelete />
-                    Delete
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigate(
-                        `/dashboard/create-new-subsection/${id}?section_id=${section._id}`
-                      );
-                    }}
-                    disabled={editingSectionId !== null}
-                    className={`px-3 py-1.5 gap-1 text-sm rounded-md bg-green-900/50 text-green-400 hover:bg-green-800/50 hover:text-green-300 transition-all flex items-center ${
-                      editingSectionId !== null
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                    }`}
-                  >
-                    <IoMdAdd />
-                    Add Sub-sections
-                  </button>
+                    <button
+                      onClick={() => startEditing(section)}
+                      type="button"
+                      disabled={editingSectionId !== null}
+                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 hover:text-blue-300 transition-all flex items-center justify-center min-w-[120px] ${
+                        editingSectionId !== null
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                    >
+                      <FaRegEdit />
+                      <span className="whitespace-nowrap">Edit</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={editingSectionId !== null || deleteLoading}
+                      onClick={() => deleteSection(section)}
+                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 hover:text-red-300 transition-all flex items-center justify-center min-w-[120px] ${
+                        editingSectionId !== null
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                    >
+                      <MdDelete />
+                      <span className="whitespace-nowrap">Delete</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/dashboard/create-new-subsection/${id}?section_id=${section._id}`
+                        )
+                      }
+                      disabled={editingSectionId !== null}
+                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-green-900/50 text-green-400 hover:bg-green-800/50 hover:text-green-300 transition-all flex items-center justify-center min-w-[120px] ${
+                        editingSectionId !== null
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                    >
+                      <IoMdAdd />
+                      <span className="whitespace-nowrap">
+                        Add Sub-sections
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
