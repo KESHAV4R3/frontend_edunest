@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { apiLinks } from "../services/apiLink";
 import { apiConnector } from "../services/apiConnector";
 import { useLocation } from "react-router-dom";
-import { FaPlay, FaClock } from "react-icons/fa";
+import { FaPlay, FaClock, FaEdit } from "react-icons/fa";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 
 const CourseCompleteViewByStudent = () => {
@@ -21,6 +21,8 @@ const CourseCompleteViewByStudent = () => {
   const [rating, setRating] = useState(1);
   const [commentError, setCommentError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     async function fetchCourseDetail() {
@@ -48,6 +50,23 @@ const CourseCompleteViewByStudent = () => {
     fetchCourseDetail();
   }, [courseId]);
 
+  useEffect(() => {
+    const getReview = async () => {
+      try {
+        const url = apiLinks.sendComment + `/${courseId}`;
+        const response = await apiConnector("get", url);
+        if (response.success && response.data) {
+          setExistingReview(response.data);
+          setComment(response.data.review || "");
+          setRating(response.data.rating || 1);
+        }
+      } catch (error) {
+        console.error("Error fetching review:", error);
+      }
+    };
+    getReview();
+  }, [courseId, submitSuccess]);
+
   const handleSubSectionClick = (sectionIndex, subSectionIndex) => {
     setActiveSection(sectionIndex);
     setActiveSubSection(subSectionIndex);
@@ -70,7 +89,7 @@ const CourseCompleteViewByStudent = () => {
     }));
   };
 
-  const handleCommentSubmit = (e) => {
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
 
     if (comment.length > 80) {
@@ -83,17 +102,44 @@ const CourseCompleteViewByStudent = () => {
       return;
     }
 
-    // Simulate submit
-    console.log("Comment submitted:", { comment, rating });
+    try {
+      let response;
 
-    // Reset form and show success message
-    setComment("");
-    setRating(1);
-    setCommentError("");
-    setSubmitSuccess(true);
+      if (existingReview && isEditing) {
+        // Update existing review
+        const url = apiLinks.editComment;
+        response = await apiConnector("PATCH", url, null, {
+          courseId,
+          rating,
+          review: comment,
+        });
+      } else {
+        // Create new review
+        const url = apiLinks.addRatingAndReview + `/${courseId}`;
+        response = await apiConnector("POST", url, null, {
+          courseId,
+          rating,
+          review: comment,
+        });
+      }
 
-    // Hide success message after 3s
-    setTimeout(() => setSubmitSuccess(false), 3000);
+      if (response.success) {
+        setCommentError("");
+        setSubmitSuccess(true);
+        setIsEditing(false);
+        setTimeout(() => setSubmitSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      setCommentError(
+        error.response?.data?.message ||
+          "Failed to submit review. Please try again."
+      );
+    }
+  };
+
+  const startEditing = () => {
+    setIsEditing(true);
   };
 
   if (loading) {
@@ -162,53 +208,112 @@ const CourseCompleteViewByStudent = () => {
                   "Select a video to get started"}
               </p>
             </div>
-            {/* Comment Form */}
+
+            {/* Comment Section */}
             <div className="mt-6 bg-gray-800 p-6 rounded-md shadow-lg">
-              <h3 className="text-xl font-semibold mb-2 text-white">
-                Leave a Comment
+              <h3 className="text-xl font-semibold mb-4 text-white">
+                {existingReview && !isEditing
+                  ? "Your Review"
+                  : existingReview
+                  ? "Edit Review"
+                  : "Leave a Review"}
               </h3>
+
               {submitSuccess && (
-                <p className="text-green-400 text-sm mb-2">
-                  Comment submitted successfully!
+                <p className="text-green-400 text-sm mb-4">
+                  Review {existingReview && isEditing ? "updated" : "submitted"}{" "}
+                  successfully!
                 </p>
               )}
-              <form onSubmit={handleCommentSubmit}>
-                <textarea
-                  className="w-full p-3 rounded-md bg-gray-900 text-white border border-gray-600 focus:outline-none"
-                  rows="4"
-                  placeholder="Write your comment..."
-                  maxLength={80}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                ></textarea>
 
-                <div className="mt-4 flex items-center gap-6">
-                  <label htmlFor="rating" className="text-sm text-gray-300">
-                    Rating:
-                  </label>
-                  <select
-                    id="rating"
-                    className="bg-gray-900 text-white border border-gray-600 p-2 rounded-md"
-                    value={rating}
-                    onChange={(e) => setRating(Number(e.target.value))}
-                  >
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <option key={num} value={num}>
-                        {num}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="submit"
-                    className="ml-auto bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md text-sm transition-colors"
-                  >
-                    Submit
-                  </button>
+              {existingReview && !isEditing ? (
+                <div className="bg-gray-900 p-4 rounded-md">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-400 font-medium">
+                          {Array.from({ length: existingReview.rating }).map(
+                            (_, i) => (
+                              <span key={i}>★</span>
+                            )
+                          )}
+                        </span>
+                        <span className="text-gray-400 text-sm">
+                          ({existingReview.rating}/5)
+                        </span>
+                      </div>
+                      <p className="text-white mt-2">{existingReview.review}</p>
+                    </div>
+                    <button
+                      onClick={startEditing}
+                      className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-sm"
+                    >
+                      <FaEdit size={14} /> Edit
+                    </button>
+                  </div>
+                  <p className="text-gray-400 text-xs">
+                    Last updated:{" "}
+                    {new Date(
+                      existingReview.lastUpdated || existingReview.updatedAt
+                    ).toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
-                {commentError && (
-                  <p className="text-red-400 text-sm mt-2">{commentError}</p>
-                )}
-              </form>
+              ) : (
+                <form onSubmit={handleCommentSubmit}>
+                  <textarea
+                    className="w-full p-3 rounded-md bg-gray-900 text-white border border-gray-600 focus:outline-none"
+                    rows="4"
+                    placeholder="Write your review..."
+                    maxLength={80}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    required
+                  ></textarea>
+
+                  <div className="mt-4 flex items-center gap-6">
+                    <label htmlFor="rating" className="text-sm text-gray-300">
+                      Rating:
+                    </label>
+                    <select
+                      id="rating"
+                      className="bg-gray-900 text-white border border-gray-600 p-2 rounded-md"
+                      value={rating}
+                      onChange={(e) => setRating(Number(e.target.value))}
+                      required
+                    >
+                      {[1, 2, 3, 4, 5].map((num) => (
+                        <option key={num} value={num}>
+                          {num}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="submit"
+                      className="ml-auto bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md text-sm transition-colors"
+                    >
+                      {existingReview ? "Update" : "Submit"}
+                    </button>
+                    {existingReview && (
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  {commentError && (
+                    <p className="text-red-400 text-sm mt-2">{commentError}</p>
+                  )}
+                </form>
+              )}
             </div>
           </div>
 

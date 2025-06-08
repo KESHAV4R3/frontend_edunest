@@ -48,4 +48,7 @@ export const apiLinks = {
   updateSubSection: `${baseUrl}/subSectionRouter/updateSubSection`,
   verifypayment: `${baseUrl}/razorPayPaymentIntegrationRouter/verifypayment`,
   capturePayment: `${baseUrl}/razorPayPaymentIntegrationRouter/capturePayment`,
+  addRatingAndReview:`${baseUrl}/ratingAndReviewRouter/addRatingAndReview`,
+  sendComment:`${baseUrl}/ratingAndReviewRouter/sendComment`,
+  editComment:`${baseUrl}/ratingAndReviewRouter/editComment`,
 };

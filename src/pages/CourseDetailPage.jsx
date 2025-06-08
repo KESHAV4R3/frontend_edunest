@@ -376,20 +376,27 @@ const CourseDetailPage = () => {
                                     </p>
                                   )}
                                 </div>
-                                <div className="flex flex-col justify-center items-center gap-2">
-                                  <video
+                                <div className="flex flex-col justify-center items-center pt-2">
+                                  <a
+                                    href={subsection.videoUrl}
+                                    target="blank"
+                                    className="text-blue-500 hover:text-red-500"
+                                  >
+                                    watch video
+                                  </a>
+                                  {/* <video
                                     className="w-[100px] h-[60px] object-cover rounded"
                                     autoPlay
                                     loop
                                     muted
-                                    playsInline
+                                    controls
                                   >
                                     <source
                                       src={subsection.videoUrl}
                                       type="video/mp4"
                                     />
                                     Your browser does not support the video tag.
-                                  </video>
+                                  </video> */}
                                   {user.accounType == "Admin" && (
                                     <a
                                       href={`${subsection.videoUrl}`}

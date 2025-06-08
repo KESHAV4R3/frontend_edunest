@@ -6,7 +6,7 @@ import { MdKeyboardArrowUp } from "react-icons/md";
 import Button from "./Button";
 import { RxCross1 } from "react-icons/rx";
 import { Link, useNavigate } from "react-router-dom";
-import { navOptions } from "../../data/application";
+// import { navOptions } from "../../data/application";
 import { IoCartOutline } from "react-icons/io5";
 import { useSelector, useDispatch } from "react-redux";
 import { apiConnector } from "../../services/apiConnector";
@@ -19,6 +19,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { IoSearch } from "react-icons/io5";
 
 const Header = () => {
+  const user = useSelector((state) => state.profile.user);
+  let navOptions = [
+    {
+      name: "Home",
+      location: "/",
+    },
+    {
+      name: "Catalog",
+      location: "/all-categories",
+    },
+    ...(user?.accountType == "Admin"
+      ? []
+      : [
+          {
+            name: "About Us",
+            location: "/about-us",
+          },
+        ]),
+    ...(user?.accountType === "Admin"
+      ? []
+      : [{ name: "Contact Us", location: "/contact-us" }]),
+  ];
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchLoading, setSearchLoading] = useState(false);
@@ -34,11 +56,10 @@ const Header = () => {
   );
   const [searchData, setSearchData] = useState("");
   const [sideBarCatagoryOpen, setSideBarCatagoryOpen] = useState(false);
-  const user = useSelector((state) => state.profile.user);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  console.log(catagories)
+  console.log(catagories);
   // to update side menu
   const updateSideMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
@@ -153,6 +174,8 @@ const Header = () => {
     }
   }, [user]);
 
+  // console.log(user.accountType)
+
   // to setIsTabletOrSmaller for resizing
   useEffect(() => {
     const handleResize = () => {
@@ -229,6 +252,9 @@ const Header = () => {
                   )}
                 </p>
               </Link>
+              {/* {
+                user.accountType!="Admin"
+              } */}
               {value.name === "Catalog" && (
                 <div
                   className={`fixed top-24 left-1/2 transform -translate-x-1/2 w-[80vw] max-w-[900px] bg-dark_bg border border-gray-700 text-white p-6 rounded-lg shadow-2xl z-20
@@ -314,6 +340,7 @@ const Header = () => {
               </div>
             )}
           </div>
+
           <div className="cursor-pointer">
             {menuOpen ? (
               <RxCross1
