@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setProfile } from "../redux/slices/profileSlice";
+import GoogleLoginButton from "../components/application/GoogleLoginButton";
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -42,10 +43,13 @@ const LoginPage = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const updateRole = useCallback((index) => {
-    setCurrentRole(roles[index]);
-    setBodyData(prev => ({...prev, accountType: roles[index].role}));
-  }, [roles]);
+  const updateRole = useCallback(
+    (index) => {
+      setCurrentRole(roles[index]);
+      setBodyData((prev) => ({ ...prev, accountType: roles[index].role }));
+    },
+    [roles]
+  );
 
   const updateUserData = useCallback((event) => {
     setBodyData((prev) => ({
@@ -82,7 +86,11 @@ const LoginPage = () => {
               autoClose: 900,
               hideProgressBar: true,
             });
-            setBodyData({ email: "", password: "", accountType: currentRole.role });
+            setBodyData({
+              email: "",
+              password: "",
+              accountType: currentRole.role,
+            });
           } else {
             dispatch(setProfile(response.user));
             toast.success("Login Successful", {
@@ -109,8 +117,7 @@ const LoginPage = () => {
 
   return (
     <div className="w-[95%] max-w-[1100px] mx-auto mt-10 mb-10">
-      <div className="bg-gray-900 p-2 rounded-xl tablet:h-[630px] flex flex-col md:flex-row-reverse items-center justify-between">
-        
+      <div className="bg-gray-900 p-2 rounded-xl tablet:h-[690px] flex flex-col md:flex-row-reverse items-center justify-between">
         {/* Image Section */}
         <div className="w-full tablet2:w-1/2 flex justify-center p-5 relative min-h-[250px]">
           <img
@@ -197,7 +204,9 @@ const LoginPage = () => {
                 type="button"
                 onClick={togglePasswordVisibility}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300"
-                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                aria-label={
+                  isPasswordVisible ? "Hide password" : "Show password"
+                }
               >
                 {isPasswordVisible ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -235,6 +244,19 @@ const LoginPage = () => {
               </span>
             </p>
           </form>
+          <div
+            className="w-full max-w-[399px]"
+            onClick={() => {
+              localStorage.setItem("role", currentRole.role);
+            }}
+          >
+            <GoogleLoginButton
+              onSuccessLogin={(user) => {
+                dispatch(setProfile(user));
+                navigate("/");
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

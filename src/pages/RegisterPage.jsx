@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { apiConnector } from "../services/apiConnector";
 import { apiLinks } from "../services/apiLink";
 import { FaRegistered } from "react-icons/fa";
+import GoogleSignUpButton from "../components/application/GoogleSignUpButton";
 
 const RegisterPage = () => {
   // Student-0 , Instructor-1 , Admin-2
@@ -170,7 +171,7 @@ const RegisterPage = () => {
 
   return (
     <div>
-      <div className="w-[95%] bg-gray-900 p-2 rounded-xl m-auto tablet:h-[690px] mt-10 flex flex-col md:flex-row-reverse items-center justify-between max-w-[1100px] mb-10">
+      <div className="w-[95%] bg-gray-900 p-2 rounded-xl m-auto tablet:h-[770px] mt-10 flex flex-col md:flex-row-reverse items-center justify-between max-w-[1100px] mb-10">
         {/* Image Section */}
         <div className="w-full flex justify-center md:w-1/2 p-5">
           {!isImageLoaded && (
@@ -390,13 +391,21 @@ const RegisterPage = () => {
             </button>
 
             {/* Login Link */}
-            <p className="text-gray-400 mt-1 flex justify-end gap-2" >
+            <p className="text-gray-400 mt-1 flex justify-end gap-2">
               Already have an account?{" "}
               <Link to="/login" className="text-dark_red hover:text-red-500">
                 Login here
               </Link>
             </p>
           </form>
+          <div
+            className="w-full max-w-[510px]"
+            onClick={() => {
+              localStorage.setItem("role", currentRole.role);
+            }}
+          >
+            <GoogleSignUpButton onSuccessSignUp={() => navigate("/login")} />
+          </div>
         </div>
       </div>
     </div>

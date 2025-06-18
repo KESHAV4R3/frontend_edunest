@@ -14,6 +14,8 @@ export const apiLinks = {
   sendOtp: `${baseUrl}/auth/sendOtp`,
   sendOtp_owner: `${baseUrl}/auth/sendOtp_owner`,
   signup: `${baseUrl}/auth/signup`,
+  googleLogin: `${baseUrl}/auth/googleLogin`,
+  googleSignUp: `${baseUrl}/auth/googleSignUp`,
   signup_Admin: `${baseUrl}/auth/signup_Admin`,
   resetPassword: `${baseUrl}/resetPasswordRouter/resetPasswordToken`,
   updatePassword: `${baseUrl}/resetPasswordRouter/resetPassword/${token}`,
