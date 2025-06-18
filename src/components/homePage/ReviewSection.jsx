@@ -1,138 +1,180 @@
-import React, { useState, useEffect } from "react";
+import { apiLinks } from "../../services/apiLink";
+import { apiConnector } from "../../services/apiConnector";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Rating } from "@material-tailwind/react";
 
 const ReviewSection = () => {
-  const reviewData = [
-    {
-      url: "https://images.unsplash.com/photo-1633332755192-727a05c4013d",
-      name: "Kumar Rai",
-      message: "Amazing product! I loved it. Will buy again.",
-      rating: 4.5,
-    },
-    {
-      url: "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7",
-      name: "Aisha Singh",
-      message: "Great quality, fast delivery. Highly recommended!",
-      rating: 5,
-    },
-    {
-      url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d",
-      name: "Rahul Verma",
-      message: "Satisfactory experience. Could be better!",
-      rating: 3.8,
-    },
-    {
-      url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-      name: "Priya Sharma",
-      message: "Totally worth it! Superb service.",
-      rating: 4.8,
-    },
-    {
-      url: "https://images.unsplash.com/photo-1599566150163-29194dcaad36",
-      name: "Vikram Patel",
-      message: "Excellent customer support and product quality.",
-      rating: 4.7,
-    },
-    {
-      url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
-      name: "Neha Gupta",
-      message: "Very happy with my purchase. Will shop again!",
-      rating: 4.9,
-    },
-  ];
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const containerRef = useRef(null);
+  const scrollInterval = useRef(null);
+  const scrollPositionRef = useRef(0);
+  const directionRef = useRef(1); // 1 for right, -1 for left
+  const resetThresholdRef = useRef(100); // Distance from end to reset
 
-  const createInfiniteArray = (arr, repetitions = 30) => {
-    let result = [];
-    for (let i = 0; i < repetitions; i++) {
-      result = [...result, ...arr];
+  // get all the ratings
+  useEffect(() => {
+    const fetchReviewData = async () => {
+      try {
+        const url = apiLinks.getAllRatings;
+        const response = await apiConnector("get", url);
+        if (response.success) {
+          setReviews(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviewData();
+  }, []);
+
+  // Improved auto-scroll effect with seamless looping
+  const startScrolling = useCallback(() => {
+    if (!containerRef.current || reviews.length <= 1) return;
+
+    const container = containerRef.current;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    const scrollSpeed = 0.25; // Very slow speed
+
+    scrollPositionRef.current += scrollSpeed * directionRef.current;
+
+    // When reaching near the end (with small threshold)
+    if (
+      scrollPositionRef.current >= maxScroll - 50 &&
+      directionRef.current === 1
+    ) {
+      // Instead of resetting abruptly, we'll:
+      // 1. Continue scrolling to the exact end
+      scrollPositionRef.current = maxScroll;
+      container.scrollLeft = scrollPositionRef.current;
+
+      // 2. Wait a brief moment at the end (500ms)
+      setTimeout(() => {
+        // 3. Smoothly transition back to start
+        const smoothReset = () => {
+          scrollPositionRef.current = Math.max(
+            scrollPositionRef.current - 0.8,
+            0
+          );
+          container.scrollLeft = scrollPositionRef.current;
+
+          if (scrollPositionRef.current > 0) {
+            requestAnimationFrame(smoothReset);
+          } else {
+            // Restart normal scrolling
+            scrollInterval.current = requestAnimationFrame(startScrolling);
+          }
+        };
+        cancelAnimationFrame(scrollInterval.current);
+        smoothReset();
+      }, 500);
+      return;
     }
-    return result;
-  };
 
-  const infiniteCards = createInfiniteArray(reviewData);
-  const [isPaused, setIsPaused] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [cardWidth, setCardWidth] = useState(100); // Dynamic width
+    container.scrollLeft = scrollPositionRef.current;
+    scrollInterval.current = requestAnimationFrame(startScrolling);
+  }, [reviews]);
 
   useEffect(() => {
-    let interval;
-    if (!isPaused) {
-      interval = setInterval(() => {
-        setCurrentIndex((prev) => prev + 1);
-      }, 3000);
-    }
+    if (reviews.length <= 1) return;
 
-    return () => clearInterval(interval);
-  }, [isPaused]);
+    const container = containerRef.current;
+    if (!container) return;
 
-  // Update card width dynamically
-  useEffect(() => {
-    const updateCardWidth = () => {
-      if (window.innerWidth >= 1024) {
-        setCardWidth(25); // 4 cards per row
-      } else if (window.innerWidth >= 768) {
-        setCardWidth(33.33); // 3 cards per row
-      } else if (window.innerWidth >= 640) {
-        setCardWidth(50); // 2 cards per row
-      } else {
-        setCardWidth(100); // 1 card per row
+    let isPaused = false;
+    let isResetting = false;
+
+    const scrollLoop = () => {
+      if (!isPaused && !isResetting) {
+        startScrolling();
       }
     };
 
-    updateCardWidth();
-    window.addEventListener("resize", updateCardWidth);
-    return () => window.removeEventListener("resize", updateCardWidth);
-  }, []);
+    // Pause on hover
+    const pauseScroll = () => {
+      isPaused = true;
+      cancelAnimationFrame(scrollInterval.current);
+    };
 
-  // Calculate the transform value
-  const getTransformValue = () => {
-    return `translateX(-${currentIndex * cardWidth}%)`;
-  };
+    const resumeScroll = () => {
+      isPaused = false;
+      if (!isResetting) {
+        scrollInterval.current = requestAnimationFrame(scrollLoop);
+      }
+    };
+
+    container.addEventListener("mouseenter", pauseScroll);
+    container.addEventListener("mouseleave", resumeScroll);
+
+    // Start initial scrolling
+    scrollInterval.current = requestAnimationFrame(scrollLoop);
+
+    return () => {
+      cancelAnimationFrame(scrollInterval.current);
+      container.removeEventListener("mouseenter", pauseScroll);
+      container.removeEventListener("mouseleave", resumeScroll);
+    };
+  }, [reviews, startScrolling]);
+  if (loading) {
+    return (
+      <div className="text-center py-8 dark:text-gray-300">
+        Loading reviews...
+      </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="text-center py-8 dark:text-gray-300">No reviews yet.</div>
+    );
+  }
 
   return (
-    <div className="relative w-full m-auto overflow-hidden py-12 px-4 sm:px-6 lg:px-8">
-      <p
-        className="text-white text-center font-bold text-2xl sm:text-3xl w-full mb-10"
-        style={{ fontFamily: "Modern Antiqua, serif" }}
+    <div className="max-w-9xl mx-auto px-4 py-12 ">
+      <h2 className="text-3xl font-bold text-center mb-12 dark:text-white">
+        Student Reviews
+      </h2>
+
+      <div
+        ref={containerRef}
+        className="flex overflow-x-hidden scroll-smooth gap-6 py-4 px-2 hide-scrollbar"
       >
-        CUSTOMER REVIEW'S
-      </p>
-      <div className="relative max-w-7xl mx-auto overflow-hidden">
-        <div
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{
-            transform: getTransformValue(),
-          }}
-        >
-          {infiniteCards.map((review, index) => (
-            <div
-              key={`${review.name}-${index}`}
-              className={`flex-shrink-0 px-3 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 ${
-                isPaused ? "hover:scale-97 transition-transform" : ""
-              }`}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
-            >
-              <div className="bg-gray-900 p-6 rounded-xl shadow-lg h-full flex flex-col cursor-pointer">
-                <img
-                  src={review.url}
-                  alt={review.name}
-                  className="w-16 h-16 rounded-full mx-auto mb-4 object-cover"
-                />
-                <h3 className="text-center font-semibold text-lg text-gray-100">
-                  {review.name}
+        {reviews.map((review) => (
+          <div
+            key={review._id}
+            className="flex-shrink-0 w-80 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          >
+            <div className="flex items-center mb-4">
+              <img
+                src={review.user.image}
+                alt={`${review.user.firstName} ${review.user.lastName}`}
+                className="w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-blue-500 dark:ring-blue-400"
+              />
+              <div>
+                <h3 className="font-semibold text-lg dark:text-white">
+                  {review.user.firstName} {review.user.lastName}
                 </h3>
-                <p className="text-center text-gray-400 mt-3 flex-grow">
-                  {review.message}
-                </p>
-                <div className="text-center mt-4">
-                  <span className="inline-flex items-center bg-dark_bg p-3 text-yellow-800 rounded-xl text-sm font-semibold">
-                    ⭐ {review.rating.toFixed(1)} / 5
-                  </span>
-                </div>
+                <Rating
+                  value={review.rating}
+                  readonly
+                  className="dark:text-yellow-400"
+                />
               </div>
             </div>
-          ))}
-        </div>
+            <div className="mt-2 text-gray-600 dark:text-gray-400 text-sm">
+              {new Date(review.lastUpdated).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
+            <p className="mt-3 text-gray-700 dark:text-gray-300">
+              {review.review}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

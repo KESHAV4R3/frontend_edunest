@@ -86,7 +86,7 @@ const DashboardInstructorCreateNewSubsection = () => {
         return;
       }
 
-      if (file.size > 100 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         toast.error("Video file size must be less than 100MB", {
           autoClose: 900,
           hideProgressBar: true,
@@ -557,7 +557,7 @@ const DashboardInstructorCreateNewSubsection = () => {
                       </label>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      MP4 format only (max 100MB)
+                      MP4 format only (max 5MB)
                     </p>
                   </>
                 )}

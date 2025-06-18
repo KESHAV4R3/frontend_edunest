@@ -29,6 +29,7 @@ import CodeAnimations2 from "./CodeAnimations2";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { LazyLoadComponent } from "react-lazy-load-image-component";
+import CourseDisplay from "./CourseDisplay";
 
 // Memoized components
 const MemoizedParagraph1 = React.memo(Paragraph_1);
@@ -416,6 +417,8 @@ const HeroSection = () => {
           </motion.div>
         </motion.div>
       </motion.div>
+
+      <CourseDisplay />
 
       {/* section 3 with enhanced 3D effects */}
       <motion.div
