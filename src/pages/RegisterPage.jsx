@@ -397,15 +397,14 @@ const RegisterPage = () => {
                 Login here
               </Link>
             </p>
+            <div
+              onClick={() => {
+                localStorage.setItem("role", currentRole.role);
+              }}
+            >
+              <GoogleSignUpButton onSuccessSignUp={() => navigate("/login")} />
+            </div>
           </form>
-          <div
-            className="w-full max-w-[510px]"
-            onClick={() => {
-              localStorage.setItem("role", currentRole.role);
-            }}
-          >
-            <GoogleSignUpButton onSuccessSignUp={() => navigate("/login")} />
-          </div>
         </div>
       </div>
     </div>

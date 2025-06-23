@@ -243,20 +243,19 @@ const LoginPage = () => {
                 Register now
               </span>
             </p>
-          </form>
-          <div
-            className="w-full max-w-[399px]"
-            onClick={() => {
-              localStorage.setItem("role", currentRole.role);
-            }}
-          >
-            <GoogleLoginButton
-              onSuccessLogin={(user) => {
-                dispatch(setProfile(user));
-                navigate("/");
+            <div
+              onClick={() => {
+                localStorage.setItem("role", currentRole.role);
               }}
-            />
-          </div>
+            >
+              <GoogleLoginButton
+                onSuccessLogin={(user) => {
+                  dispatch(setProfile(user));
+                  navigate("/");
+                }}
+              />
+            </div>
+          </form>
         </div>
       </div>
     </div>

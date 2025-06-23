@@ -75,6 +75,9 @@ const DashboardInstructorCreateNewCourseSuccessful = lazy(() =>
     "./components/dashBoardpage/DashboardInstructorCreateNewCourseSuccessful"
   )
 );
+const DashboardLiveStream = lazy(() =>
+  import("./components/dashBoardpage/DashboardLiveStream")
+);
 
 function App() {
   const dispatch = useDispatch();
@@ -262,6 +265,16 @@ function App() {
                 <NonLoggedInPrivate dashboard="true">
                   <Suspense fallback={<SimpleSpinner />}>
                     <DashboardPageStudentAdmin />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="LiveStream"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <DashboardLiveStream />
                   </Suspense>
                 </NonLoggedInPrivate>
               }

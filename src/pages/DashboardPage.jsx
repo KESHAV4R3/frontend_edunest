@@ -2,6 +2,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { FaUser } from "react-icons/fa";
 import { IoMdSettings } from "react-icons/io";
+import { MdOutlineOnlinePrediction } from "react-icons/md";
 import { MdKeyboardArrowDown, MdLogout, MdDelete } from "react-icons/md";
 import { IoBookSharp } from "react-icons/io5";
 import { toast } from "react-toastify";
@@ -66,6 +67,16 @@ const DashboardPage = () => {
               icon: <IoMdSettings />,
               label: "Account Setting",
               path: "/dashboard/accout-setting",
+            },
+          ]
+        : []),
+      ...(user.accountType === "Instructor"
+        ? [
+            {
+              id: "LiveStream",
+              icon: <MdOutlineOnlinePrediction />,
+              label: "LiveStream",
+              path: "/dashboard/LiveStream",
             },
           ]
         : []),
