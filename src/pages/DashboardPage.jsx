@@ -13,6 +13,7 @@ import { apiConnector } from "../services/apiConnector";
 import { apiLinks } from "../services/apiLink";
 import { MdOutlineCreateNewFolder } from "react-icons/md";
 import { motion } from "framer-motion";
+import { MdOutlineAttachMoney } from "react-icons/md";
 import {
   setProfile,
   setAllStudents,
@@ -57,6 +58,16 @@ const DashboardPage = () => {
               icon: <MdOutlineCreateNewFolder />,
               label: "Create new course",
               path: "/dashboard/create-new-course",
+            },
+          ]
+        : []),
+      ...(user.accountType === "Instructor"
+        ? [
+            {
+              id: "Earnings",
+              icon: <MdOutlineAttachMoney/>,
+              label: "Earnings",
+              path: "/dashboard/Earnings",
             },
           ]
         : []),

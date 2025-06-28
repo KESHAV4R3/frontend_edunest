@@ -39,17 +39,24 @@ const CourseDetailPage = () => {
     (state) => state.profile.paymentLoading
   );
   const user = useSelector((state) => state.profile.user);
+  console.log(user);
   useEffect(() => {
     async function fetchCourse() {
       try {
         setLoading(true); // Move setLoading(true) here
         let url = null;
+        if (!user) {
+          // user is not logged in
+          toast.warn("Login / register to continue");
+          navigate('/')
+        }
         if (user && user.accountType == "Admin") {
           url = apiLinks.getCourseDetailByAdmin + `/${courseId}`;
         } else {
           url = apiLinks.getCourseByIdOverview + `/${courseId}`;
         }
         const response = await apiConnector("GET", url);
+        console.log(response.data);
         if (!response.success) {
           toast.error("Unable to fetch course detail", {
             autoClose: 900,

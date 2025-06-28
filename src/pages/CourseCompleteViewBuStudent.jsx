@@ -1,9 +1,12 @@
+// ================= FRONTEND: CourseCompleteViewByStudent =================
+
 import React, { useEffect, useState, useRef } from "react";
 import { apiLinks } from "../services/apiLink";
 import { apiConnector } from "../services/apiConnector";
 import { useLocation } from "react-router-dom";
-import { FaPlay, FaClock, FaEdit } from "react-icons/fa";
+import { FaPlay, FaClock, FaEdit, FaCheck } from "react-icons/fa";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { motion } from "framer-motion";
 
 const CourseCompleteViewByStudent = () => {
   const location = useLocation();
@@ -14,15 +17,19 @@ const CourseCompleteViewByStudent = () => {
   const [activeSubSection, setActiveSubSection] = useState(0);
   const [videoLoading, setVideoLoading] = useState(true);
   const [openSections, setOpenSections] = useState({});
+  const [completedVideos, setCompletedVideos] = useState([]);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [totalVideos, setTotalVideos] = useState(0);
   const videoRef = useRef(null);
+  const [totalVideo, setTotalVideo] = useState(0);
 
-  // Comment-related states
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(1);
   const [commentError, setCommentError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [existingReview, setExistingReview] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [videoCompleteLoading, setVideoCompleteLoading] = useState(false);
 
   useEffect(() => {
     async function fetchCourseDetail() {
@@ -30,6 +37,18 @@ const CourseCompleteViewByStudent = () => {
         setLoading(true);
         const url = apiLinks.getCourseById + `/${courseId}`;
         const response = await apiConnector("GET", url);
+
+        let temp = 0;
+        for (let i = 0; i < response?.data?.section.length; i++) {
+          for (
+            let j = 0;
+            j < response?.data?.section[i].subSection.length;
+            j++
+          ) {
+            temp++;
+          }
+        }
+        setTotalVideo(temp);
 
         if (response.success) {
           const parsedCourse = {
@@ -50,22 +69,31 @@ const CourseCompleteViewByStudent = () => {
     fetchCourseDetail();
   }, [courseId]);
 
-  useEffect(() => {
-    const getReview = async () => {
-      try {
-        const url = apiLinks.sendComment + `/${courseId}`;
-        const response = await apiConnector("get", url);
-        if (response.success && response.data) {
-          setExistingReview(response.data);
-          setComment(response.data.review || "");
-          setRating(response.data.rating || 1);
-        }
-      } catch (error) {
-        console.error("Error fetching review:", error);
+  const fetchProgress = async () => {
+    try {
+      const res = await apiConnector(
+        "GET",
+        `${apiLinks.get_progress}/${courseId}`
+      );
+
+      if (res.success && res.data) {
+        const { completed, completedCount, totalCount } = res.data;
+
+        setCompletedVideos(completed);
+        setTotalVideos(totalCount);
+
+        const percent =
+          totalCount === 0 ? 0 : (completedCount / totalCount) * 100;
+        setProgressPercent(Math.round(percent));
       }
-    };
-    getReview();
-  }, [courseId, submitSuccess]);
+    } catch (err) {
+      console.error("Error fetching progress", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProgress();
+  }, [courseId]);
 
   const handleSubSectionClick = (sectionIndex, subSectionIndex) => {
     setActiveSection(sectionIndex);
@@ -89,6 +117,29 @@ const CourseCompleteViewByStudent = () => {
     }));
   };
 
+  const toggleVideoCompletion = async (subSectionId) => {
+    setVideoCompleteLoading(true);
+    try {
+      const isCompleted = completedVideos.includes(subSectionId);
+      const endpoint = isCompleted
+        ? apiLinks.remove_completed
+        : apiLinks.mark_completed;
+
+      const res = await apiConnector("POST", endpoint, null, {
+        courseId,
+        subSectionId,
+      });
+
+      if (res.success) {
+        fetchProgress();
+      }
+    } catch (error) {
+      console.error("Error toggling video completion", error);
+    } finally {
+      setVideoCompleteLoading(false);
+    }
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
 
@@ -106,7 +157,6 @@ const CourseCompleteViewByStudent = () => {
       let response;
 
       if (existingReview && isEditing) {
-        // Update existing review
         const url = apiLinks.editComment;
         response = await apiConnector("PATCH", url, null, {
           courseId,
@@ -114,7 +164,6 @@ const CourseCompleteViewByStudent = () => {
           review: comment,
         });
       } else {
-        // Create new review
         const url = apiLinks.addRatingAndReview + `/${courseId}`;
         response = await apiConnector("POST", url, null, {
           courseId,
@@ -162,17 +211,19 @@ const CourseCompleteViewByStudent = () => {
   const currentSubSection =
     currentSection?.subSection?.[activeSubSection] || null;
 
+  // Calculate completed count
+  const completedCount = completedVideos.length;
+
   return (
-    <div className="bg-gray-950 min-h-screen py-8 text-white pt-20">
+    <div className={`bg-gray-950 min-h-screen py-8 text-white pt-20`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Video Section */}
           <div className="md:w-2/3">
-            <div className="bg-black rounded-lg overflow-hidden aspect-video mb-4 shadow-xl">
+            <div className="bg-black rounded-xl overflow-hidden aspect-video mb-6 shadow-2xl relative">
               {currentSubSection ? (
                 <>
                   {videoLoading && (
-                    <div className="flex justify-center items-center h-full">
+                    <div className="absolute inset-0 flex justify-center items-center bg-gray-900 z-10">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   )}
@@ -199,7 +250,50 @@ const CourseCompleteViewByStudent = () => {
               )}
             </div>
 
-            <div className="bg-gray-900 rounded-lg shadow-md p-6">
+            {/* Progress Section */}
+            <div className="bg-gray-900 rounded-xl p-6 mb-6 shadow-lg border border-gray-800">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold text-blue-400">
+                  Your Progress
+                </h3>
+                <span className="text-sm text-gray-300">
+                  {completedCount}/{totalVideo} (
+                  {Math.round((completedCount / totalVideo) * 100)}%)
+                </span>
+              </div>
+              <div className="relative h-4 bg-gray-700 rounded-full overflow-hidden">
+                <motion.div
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{
+                    width: `${
+                      totalVideo > 0 ? (completedCount / totalVideo) * 100 : 0
+                    }%`,
+                  }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    className="h-2 w-2 bg-white rounded-full"
+                    animate={{
+                      x: `${
+                        totalVideo > 0
+                          ? (completedCount / totalVideo) * 100 - 2
+                          : 0
+                      }%`,
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 rounded-xl shadow-lg p-6 border border-gray-800">
               <h2 className="text-2xl font-bold mb-4 text-white">
                 {currentSection?.name || "Section"}
               </h2>
@@ -208,187 +302,143 @@ const CourseCompleteViewByStudent = () => {
                   "Select a video to get started"}
               </p>
             </div>
-
-            {/* Comment Section */}
-            <div className="mt-6 bg-gray-800 p-6 rounded-md shadow-lg">
-              <h3 className="text-xl font-semibold mb-4 text-white">
-                {existingReview && !isEditing
-                  ? "Your Review"
-                  : existingReview
-                  ? "Edit Review"
-                  : "Leave a Review"}
-              </h3>
-
-              {submitSuccess && (
-                <p className="text-green-400 text-sm mb-4">
-                  Review {existingReview && isEditing ? "updated" : "submitted"}{" "}
-                  successfully!
-                </p>
-              )}
-
-              {existingReview && !isEditing ? (
-                <div className="bg-gray-900 p-4 rounded-md">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-400 font-medium">
-                          {Array.from({ length: existingReview.rating }).map(
-                            (_, i) => (
-                              <span key={i}>★</span>
-                            )
-                          )}
-                        </span>
-                        <span className="text-gray-400 text-sm">
-                          ({existingReview.rating}/5)
-                        </span>
-                      </div>
-                      <p className="text-white mt-2">{existingReview.review}</p>
-                    </div>
-                    <button
-                      onClick={startEditing}
-                      className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-sm"
-                    >
-                      <FaEdit size={14} /> Edit
-                    </button>
-                  </div>
-                  <p className="text-gray-400 text-xs">
-                    Last updated:{" "}
-                    {new Date(
-                      existingReview.lastUpdated || existingReview.updatedAt
-                    ).toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleCommentSubmit}>
-                  <textarea
-                    className="w-full p-3 rounded-md bg-gray-900 text-white border border-gray-600 focus:outline-none"
-                    rows="4"
-                    placeholder="Write your review..."
-                    maxLength={80}
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    required
-                  ></textarea>
-
-                  <div className="mt-4 flex items-center gap-6">
-                    <label htmlFor="rating" className="text-sm text-gray-300">
-                      Rating:
-                    </label>
-                    <select
-                      id="rating"
-                      className="bg-gray-900 text-white border border-gray-600 p-2 rounded-md"
-                      value={rating}
-                      onChange={(e) => setRating(Number(e.target.value))}
-                      required
-                    >
-                      {[1, 2, 3, 4, 5].map((num) => (
-                        <option key={num} value={num}>
-                          {num}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="submit"
-                      className="ml-auto bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md text-sm transition-colors"
-                    >
-                      {existingReview ? "Update" : "Submit"}
-                    </button>
-                    {existingReview && (
-                      <button
-                        type="button"
-                        onClick={() => setIsEditing(false)}
-                        className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md text-sm transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                  {commentError && (
-                    <p className="text-red-400 text-sm mt-2">{commentError}</p>
-                  )}
-                </form>
-              )}
-            </div>
           </div>
 
-          {/* Course Section Navigation */}
+          {/* Sidebar */}
           <div className="md:w-1/3">
-            <div className="rounded-lg shadow-md border border-gray-700">
-              <div className="p-4 bg-blue-800 text-white rounded-t-lg">
-                <h2 className="text-xl font-semibold">Course Content</h2>
+            <div className="rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+              <div className="p-4 bg-gradient-to-r from-blue-800 to-blue-600 text-white">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Course Content</h2>
+                  <span className="text-sm bg-blue-900 px-2 py-1 rounded-full">
+                    {completedCount}/{totalVideo}
+                  </span>
+                </div>
               </div>
 
               <div className="divide-y divide-gray-800 max-h-[600px] overflow-y-auto bg-gray-900">
-                {course.section.map((section, sectionIndex) => (
-                  <div key={section._id} className="p-4">
-                    <div
-                      className={`flex justify-between items-center cursor-pointer transition-all ${
-                        activeSection === sectionIndex
-                          ? "text-blue-400"
-                          : "text-white"
-                      }`}
-                      onClick={() => {
-                        toggleSection(sectionIndex);
-                      }}
-                    >
-                      <h3
-                        className="font-medium text-lg"
-                        onClick={() => {
-                          handleSubSectionClick(sectionIndex, 0);
-                        }}
-                      >
-                        {section.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <span>{section.subSection.length} videos</span>
-                        {openSections[sectionIndex] ? (
-                          <IoIosArrowUp size={20} />
-                        ) : (
-                          <IoIosArrowDown size={20} />
-                        )}
-                      </div>
-                    </div>
+                {course.section.map((section, sectionIndex) => {
+                  const sectionCompletedCount = section.subSection.filter(
+                    (sub) => completedVideos.includes(sub._id)
+                  ).length;
 
-                    {openSections[sectionIndex] && (
-                      <div className="mt-2 ml-4 space-y-2">
-                        {section.subSection.map(
-                          (subSection, subSectionIndex) => (
-                            <div
-                              key={subSection._id}
-                              className={`flex items-center py-2 px-3 rounded-md cursor-pointer transition-all ${
-                                activeSection === sectionIndex &&
-                                activeSubSection === subSectionIndex
-                                  ? "bg-blue-700 text-white"
-                                  : "hover:bg-gray-800 text-gray-300"
-                              }`}
-                              onClick={() =>
-                                handleSubSectionClick(
-                                  sectionIndex,
-                                  subSectionIndex
-                                )
-                              }
-                            >
-                              <FaPlay className="mr-2 text-xs" />
-                              <span className="flex-1">{subSection.title}</span>
-                              {subSection.timeDuration && (
-                                <span className="ml-auto flex items-center text-xs text-gray-400">
-                                  <FaClock className="mr-1" />
-                                  {subSection.timeDuration}
-                                </span>
-                              )}
-                            </div>
-                          )
-                        )}
+                  return (
+                    <div
+                      key={section._id}
+                      className="p-4 hover:bg-gray-800 transition-colors"
+                    >
+                      <div
+                        className={`flex justify-between items-center cursor-pointer transition-all ${
+                          activeSection === sectionIndex
+                            ? "text-blue-400"
+                            : "text-white"
+                        }`}
+                        onClick={() => toggleSection(sectionIndex)}
+                      >
+                        <h3
+                          className="font-medium text-lg flex items-center"
+                          onClick={() => handleSubSectionClick(sectionIndex, 0)}
+                        >
+                          <span className="mr-2 text-blue-400">
+                            {sectionIndex + 1}.
+                          </span>
+                          {section.name}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-gray-700 px-2 py-1 rounded-full">
+                            {sectionCompletedCount}/{section.subSection.length}
+                          </span>
+                          {openSections[sectionIndex] ? (
+                            <IoIosArrowUp size={18} className="text-gray-400" />
+                          ) : (
+                            <IoIosArrowDown
+                              size={18}
+                              className="text-gray-400"
+                            />
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {openSections[sectionIndex] && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="mt-2 ml-6 space-y-2"
+                        >
+                          {section.subSection.map(
+                            (subSection, subSectionIndex) => (
+                              <motion.div
+                                key={subSection._id}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={`flex items-center py-2 px-3 rounded-md cursor-pointer transition-all ${
+                                  activeSection === sectionIndex &&
+                                  activeSubSection === subSectionIndex
+                                    ? "bg-blue-700/80 text-white shadow-md"
+                                    : "hover:bg-gray-800/50 text-gray-300"
+                                }`}
+                                onClick={() =>
+                                  handleSubSectionClick(
+                                    sectionIndex,
+                                    subSectionIndex
+                                  )
+                                }
+                              >
+                                <div className="flex items-center w-full">
+                                  <div className="flex items-center flex-1">
+                                    {completedVideos.includes(
+                                      subSection._id
+                                    ) ? (
+                                      <FaCheck className="mr-3 text-sm text-green-400" />
+                                    ) : (
+                                      <FaPlay className="mr-3 text-sm text-blue-400" />
+                                    )}
+                                    <span
+                                      className={
+                                        completedVideos.includes(subSection._id)
+                                          ? "line-through opacity-75"
+                                          : ""
+                                      }
+                                    >
+                                      {subSection.title}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center ml-auto gap-2">
+                                    {subSection.timeDuration && (
+                                      <span className="flex items-center text-xs text-gray-400">
+                                        <FaClock className="mr-1" />
+                                        {subSection.timeDuration}
+                                      </span>
+                                    )}
+                                    <input
+                                      type="checkbox"
+                                      disabled={videoCompleteLoading}
+                                      checked={completedVideos.includes(
+                                        subSection._id
+                                      )}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        toggleVideoCompletion(subSection._id);
+                                      }}
+                                      className={`w-4 h-4 cursor-pointer rounded bg-gray-700 border-gray-600 focus:ring-blue-500 ${
+                                        videoCompleteLoading
+                                          ? "cursor-wait pointer-events-none opacity-70"
+                                          : ""
+                                      }`}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )
+                          )}
+                        </motion.div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

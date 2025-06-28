@@ -230,7 +230,7 @@ const CourseCard = memo(({ course, id }) => {
   }, [purchaseButtonLoading, location.pathname, accountType]);
 
   return (
-    <div className="relative bg-gray-800 min-w-[340px] p-5 rounded-md w-[97%] h-[630px] md:h-[640px] max-w-[500px] cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/50 hover:translate-y-[-5px]">
+    <div className="relative bg-gray-800 min-w-[340px] p-5 rounded-md w-[97%] h-[650px] md:h-[655px] max-w-[500px] cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/50 hover:translate-y-[-5px]">
       {/* Delete Button for Admin or Cart */}
       {(user?.accountType === "Admin" ||
         location.pathname.split("/").at(-1) === "cart") && (
@@ -269,7 +269,7 @@ const CourseCard = memo(({ course, id }) => {
         
         <p 
           onClick={navigateCourse}
-          className="text-[15px] bg-gray-700 p-3 min-h-[160px] rounded-md transition-colors duration-200 line-clamp-6 text-gray-300"
+          className="text-[15px] bg-gray-700 p-3 min-h-[200px] rounded-md transition-colors duration-200 line-clamp-6 text-gray-300"
         >
           {description.substring(0, 350)}...
         </p>

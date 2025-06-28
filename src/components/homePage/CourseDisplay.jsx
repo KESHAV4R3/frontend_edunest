@@ -1,406 +1,294 @@
 import { useState, useEffect, useRef } from "react";
 import { apiLinks } from "../../services/apiLink";
 import { apiConnector } from "../../services/apiConnector";
-import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
-
-// Sample data matching the new structure
-const sampleCourse = [
-  {
-    id: 1,
-    name: "Advanced React Development",
-    instructor: "Jane Smith",
-    averageRating: 4.9,
-    price: 89.99,
-    thumbnail:
-      "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
-    createdAt: "2023-04-10T10:00:00Z",
-  },
-  {
-    id: 2,
-    name: "Complete JavaScript Mastery",
-    instructor: "John Doe",
-    averageRating: 4.8,
-    price: 79.99,
-    thumbnail:
-      "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
-    createdAt: "2023-03-15T08:30:00Z",
-  },
-  {
-    id: 3,
-    name: "Node.js From Beginner to Expert",
-    instructor: "Mike Johnson",
-    averageRating: 4.7,
-    price: 99.99,
-    thumbnail:
-      "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
-    createdAt: "2023-05-01T14:15:00Z",
-  },
-  {
-    id: 4,
-    name: "Introduction to TypeScript",
-    instructor: "Sarah Williams",
-    averageRating: 4.6,
-    price: 69.99,
-    thumbnail:
-      "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
-    createdAt: "2023-05-15T09:45:00Z",
-  },
-  {
-    id: 5,
-    name: "Modern CSS with Tailwind",
-    instructor: "David Brown",
-    averageRating: 4.5,
-    price: 59.99,
-    thumbnail:
-      "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
-    createdAt: "2023-05-10T11:20:00Z",
-  },
-  {
-    id: 6,
-    name: "GraphQL Fundamentals",
-    instructor: "Emily Davis",
-    averageRating: 4.4,
-    price: 79.99,
-    thumbnail:
-      "https://gratisography.com/wp-content/uploads/2024/11/gratisography-augmented-reality-800x525.jpg",
-    createdAt: "2023-05-05T16:10:00Z",
-  },
-];
+import { useNavigate } from "react-router-dom";
 
 const CourseDisplay = () => {
   const [topRatedCourses, setTopRatedCourses] = useState([]);
   const [recentCourses, setRecentCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [topRatedIndex, setTopRatedIndex] = useState(0);
-  const [recentIndex, setRecentIndex] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(0);
   const topRatedRef = useRef(null);
   const recentRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const navigate = useNavigate();
 
-  // Responsive number of cards to show
+  // navigateEnroll
+  const navigateEnroll = (id) => {
+    navigate(`/course-detail/${id}`);
+  };
+  // Calculate cards to show based on window width
   const getCardsToShow = () => {
-    if (typeof window === 'undefined') return 4;
-    const width = window.innerWidth;
-    if (width < 640) return 1;  // Mobile
-    if (width < 768) return 2;  // Tablet
-    if (width < 1024) return 3; // Small desktop
-    return 4;                   // Large desktop
+    if (windowWidth < 640) return 1;
+    if (windowWidth < 768) return 2;
+    if (windowWidth < 1024) return 3;
+    return 4;
   };
 
-  const [cardsToShow, setCardsToShow] = useState(getCardsToShow());
+  const cardsToShow = getCardsToShow();
 
   useEffect(() => {
     const handleResize = () => {
-      setCardsToShow(getCardsToShow());
-      // Reset indexes on resize to prevent empty space
-      setTopRatedIndex(0);
-      setRecentIndex(0);
+      setWindowWidth(window.innerWidth);
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Set initial width
+    setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
     const getCourses = async () => {
       try {
         setLoading(true);
-        const url = apiLinks.getTopCourses;
-        const response = await apiConnector("get", url);
-
+        const response = await apiConnector("get", apiLinks.getTopCourses);
+        console.log(response.topRatedCourses[0]);
+        console.log(response.topLatestCourses[0]);
         if (response?.success) {
-          setTopRatedCourses(sampleCourse);
-          setRecentCourses(sampleCourse);
-        } else {
-          setTopRatedCourses(sampleCourse);
-          setRecentCourses(sampleCourse);
+          setTopRatedCourses(response.topRatedCourses || []);
+          setRecentCourses(response.topLatestCourses || []);
         }
       } catch (err) {
         setError(err.message);
-        setTopRatedCourses(sampleCourse);
-        setRecentCourses(sampleCourse);
       } finally {
         setLoading(false);
       }
     };
-
     getCourses();
   }, []);
 
-  const nextTopRatedSlide = () => {
-    setTopRatedIndex((prevIndex) =>
-      prevIndex >= topRatedCourses.length - cardsToShow ? 0 : prevIndex + 1
-    );
-  };
-
-  const prevTopRatedSlide = () => {
-    setTopRatedIndex((prevIndex) =>
-      prevIndex === 0 ? topRatedCourses.length - cardsToShow : prevIndex - 1
-    );
-  };
-
-  const nextRecentSlide = () => {
-    setRecentIndex((prevIndex) =>
-      prevIndex >= recentCourses.length - cardsToShow ? 0 : prevIndex + 1
-    );
-  };
-
-  const prevRecentSlide = () => {
-    setRecentIndex((prevIndex) =>
-      prevIndex === 0 ? recentCourses.length - cardsToShow : prevIndex - 1
-    );
-  };
-
-  // Touch and mouse event handlers for swipe
-  const handleDragStart = (e, ref) => {
-    setIsDragging(true);
-    setStartX(e.pageX || e.touches[0].pageX);
-    setScrollLeft(ref.current.scrollLeft);
-  };
-
-  const handleDragMove = (e, ref) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const x = e.pageX || e.touches[0].pageX;
-    const walk = (x - startX) * 2; // Adjust scroll speed
-    ref.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleDragEnd = (ref, setIndex) => {
-    setIsDragging(false);
+  // Handle scroll behavior
+  const handleScroll = (ref, direction) => {
     const container = ref.current;
-    const cardWidth = container.scrollWidth / recentCourses.length;
-    const newIndex = Math.round(container.scrollLeft / cardWidth);
-    setIndex(Math.max(0, Math.min(newIndex, recentCourses.length - cardsToShow)));
+    if (!container) return;
+
+    const cardWidth = container.firstChild?.clientWidth || 0;
+    const scrollAmount = cardWidth * cardsToShow;
+
+    if (direction === "left") {
+      container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    } else {
+      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
   };
 
-  // Helper function to format price
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "INR",
-    }).format(price);
+  if (loading)
+    return (
+      <div className="text-center py-20">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+        <p className="text-gray-400 text-lg">Loading courses...</p>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="text-center py-20">
+        <div className="text-red-500 text-4xl mb-4">⚠️</div>
+        <p className="text-red-500 text-lg">Error loading courses</p>
+        <p className="text-gray-400 mt-2">{error}</p>
+      </div>
+    );
+
+  const CourseCard = ({ course, showDate = false }) => (
+    <div className="px-2 w-full" style={{ minWidth: `${100 / cardsToShow}%` }}>
+      <div className="bg-gray-800 rounded-xl shadow-lg overflow-hidden h-[400px] md:h-[350px] cursor-pointer flex flex-col border border-gray-700 hover:border-blue-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div className="relative overflow-hidden h-40 md:h-48">
+          <img
+            src={course.thumbnail}
+            alt={course.name}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src =
+                "https://via.placeholder.com/300x200?text=Course+Image";
+            }}
+          />
+          <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-yellow-400 text-xs px-2 py-1 rounded flex items-center">
+            <svg
+              className="w-3 h-3 mr-1"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            {course.averageRating}
+          </div>
+        </div>
+        <div className="p-4 flex flex-col flex-grow">
+          <h3 className="text-md md:text-lg font-bold mb-2 line-clamp-2 text-gray-200 hover:text-blue-400 transition-colors">
+            {course.name}
+          </h3>
+          <p className="text-gray-400 text-sm mb-2">
+            By{" "}
+            {Array.isArray(course.instructor)
+              ? course.instructor.map((inst, index) => (
+                  <span key={inst._id || index} className="text-gray-100">
+                    {inst.firstName} {inst.lastName}
+                    {index < course.instructor.length - 1 ? ", " : ""}
+                  </span>
+                ))
+              : course.instructor}
+          </p>
+
+          <div className="mt-auto">
+            {showDate && (
+              <p className="text-gray-400 text-s mb-3 font-bold">
+                Added :{" "}
+                <span className="text-red-500 text-s mb-3  font-bold ">
+                  {new Date(course.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              </p>
+            )}
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-green-400 font-bold text-sm">
+                {new Intl.NumberFormat("en-IN", {
+                  style: "currency",
+                  currency: "INR",
+                }).format(course.price)}
+              </span>
+              <button
+                onClick={() => {
+                  navigateEnroll(course._id);
+                }}
+                className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-3 py-1 rounded-full text-xs transition-all duration-300 transform hover:scale-105"
+              >
+                Enroll Now
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const CourseSlider = ({ courses, title, showDate, scrollRef }) => {
+    const [showLeftButton, setShowLeftButton] = useState(false);
+    const [showRightButton, setShowRightButton] = useState(true);
+
+    const checkScrollPosition = () => {
+      if (!scrollRef.current) return;
+
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftButton(scrollLeft > 0);
+      setShowRightButton(scrollLeft < scrollWidth - clientWidth);
+    };
+
+    useEffect(() => {
+      const container = scrollRef.current;
+      if (container) {
+        container.addEventListener("scroll", checkScrollPosition);
+        checkScrollPosition(); // Initial check
+      }
+      return () => {
+        if (container) {
+          container.removeEventListener("scroll", checkScrollPosition);
+        }
+      };
+    }, [courses, cardsToShow]);
+
+    return (
+      <section className="mb-16 relative">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-200">
+            {title}
+          </h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handleScroll(scrollRef, "left")}
+              className={`p-2 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition-all ${
+                !showLeftButton ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={!showLeftButton}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleScroll(scrollRef, "right")}
+              className={`p-2 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white transition-all ${
+                !showRightButton ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={!showRightButton}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            className="flex overflow-x-hidden scroll-smooth space-x-0 py-2"
+          >
+            {courses.map((course) => (
+              <div
+                key={course._id}
+                className="flex-shrink-0"
+                style={{ width: `${100 / cardsToShow}%` }}
+              >
+                <CourseCard course={course} showDate={showDate} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
   };
-
-  // Helper function to format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  if (loading) {
-    return <div className="text-center py-8 text-gray-200">Loading courses...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-8 text-red-500">Error: {error}</div>;
-  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <hr className="border-gray-700 mb-10" />
-      <h1 className="text-3xl md:text-4xl font-bold mb-8 text-gray-200 text-center">
-        Featured Courses
-      </h1>
+    <div className="container mx-auto px-4 py-12">
+      <div className="text-center mb-16">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+          Featured Courses
+        </h1>
+        <p className="text-gray-400 max-w-2xl mx-auto">
+          Discover our top-rated and newest courses to boost your skills and
+          career
+        </p>
+      </div>
 
-      {/* Top Rated Courses Section */}
-      <section className="mb-12 relative">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-400">
-            Top Rated Courses
-            <div className="w-full h-[1px] bg-gray-700 mt-1"></div>
-          </h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={prevTopRatedSlide}
-              className="p-2 rounded-full cursor-pointer hover:bg-gray-700 transition"
-              aria-label="Previous slide"
-            >
-              <IoIosArrowBack className="text-white bg-gray-800 w-6 h-6 md:w-8 md:h-8 p-1 md:p-2 rounded-full" />
-            </button>
-            <button
-              onClick={nextTopRatedSlide}
-              className="p-2 rounded-full cursor-pointer hover:bg-gray-700 transition"
-              aria-label="Next slide"
-            >
-              <IoIosArrowForward className="text-white bg-gray-800 w-6 h-6 md:w-8 md:h-8 p-1 md:p-2 rounded-full" />
-            </button>
-          </div>
-        </div>
+      <CourseSlider
+        courses={topRatedCourses}
+        title="Top Rated Courses"
+        scrollRef={topRatedRef}
+      />
 
-        <div className="relative overflow-hidden">
-          <div
-            ref={topRatedRef}
-            className="flex transition-transform duration-300 ease-in-out"
-            style={{
-              transform: `translateX(-${topRatedIndex * (100 / cardsToShow)}%)`,
-              width: `${topRatedCourses.length * (100 / cardsToShow)}%`,
-            }}
-            onMouseDown={(e) => handleDragStart(e, topRatedRef)}
-            onMouseMove={(e) => handleDragMove(e, topRatedRef)}
-            onMouseUp={() => handleDragEnd(topRatedRef, setTopRatedIndex)}
-            onMouseLeave={() => handleDragEnd(topRatedRef, setTopRatedIndex)}
-            onTouchStart={(e) => handleDragStart(e, topRatedRef)}
-            onTouchMove={(e) => handleDragMove(e, topRatedRef)}
-            onTouchEnd={() => handleDragEnd(topRatedRef, setTopRatedIndex)}
-          >
-            {topRatedCourses.map((course) => (
-              <div
-                key={course.id}
-                className="flex-shrink-0 px-2 transition-all duration-300"
-                style={{ 
-                  width: `${100 / cardsToShow}%`,
-                  minWidth: `${100 / Math.min(cardsToShow, topRatedCourses.length)}%`
-                }}
-              >
-                <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col border border-gray-700">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.name}
-                    className="w-full h-40 md:h-48 object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/300x200?text=Course+Image";
-                    }}
-                  />
-                  <div className="p-4 flex flex-col flex-grow">
-                    <h3 className="text-md md:text-lg font-bold mb-2 line-clamp-2 text-gray-200">
-                      {course.name}
-                    </h3>
-                    <p className="text-gray-400 text-sm mb-2">
-                      By {course.instructor}
-                    </p>
-                    <div className="flex justify-between items-center mb-3 mt-auto">
-                      <div className="flex items-center">
-                        <span className="text-yellow-500 font-bold mr-1">
-                          {course.averageRating}
-                        </span>
-                        <svg
-                          className="w-4 h-4 text-yellow-500"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      </div>
-                      <span className="text-green-400 font-bold text-sm">
-                        {formatPrice(course.price)}
-                      </span>
-                    </div>
-                    <button className="w-full bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition text-sm mt-2">
-                      Enroll Now
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Recent Courses Section */}
-      <section className="relative mb-12">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-400">
-            Recently Added
-            <div className="w-full h-[1px] bg-gray-700 mt-1"></div>
-          </h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={prevRecentSlide}
-              className="p-2 rounded-full cursor-pointer hover:bg-gray-700 transition"
-              aria-label="Previous slide"
-            >
-              <IoIosArrowBack className="text-white bg-gray-800 w-6 h-6 md:w-8 md:h-8 p-1 md:p-2 rounded-full" />
-            </button>
-            <button
-              onClick={nextRecentSlide}
-              className="p-2 rounded-full cursor-pointer hover:bg-gray-700 transition"
-              aria-label="Next slide"
-            >
-              <IoIosArrowForward className="text-white bg-gray-800 w-6 h-6 md:w-8 md:h-8 p-1 md:p-2 rounded-full" />
-            </button>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden">
-          <div
-            ref={recentRef}
-            className="flex transition-transform duration-300 ease-in-out"
-            style={{
-              transform: `translateX(-${recentIndex * (100 / cardsToShow)}%)`,
-              width: `${recentCourses.length * (100 / cardsToShow)}%`,
-            }}
-            onMouseDown={(e) => handleDragStart(e, recentRef)}
-            onMouseMove={(e) => handleDragMove(e, recentRef)}
-            onMouseUp={() => handleDragEnd(recentRef, setRecentIndex)}
-            onMouseLeave={() => handleDragEnd(recentRef, setRecentIndex)}
-            onTouchStart={(e) => handleDragStart(e, recentRef)}
-            onTouchMove={(e) => handleDragMove(e, recentRef)}
-            onTouchEnd={() => handleDragEnd(recentRef, setRecentIndex)}
-          >
-            {recentCourses.map((course) => (
-              <div
-                key={course.id}
-                className="flex-shrink-0 px-2 transition-all duration-300"
-                style={{ 
-                  width: `${100 / cardsToShow}%`,
-                  minWidth: `${100 / Math.min(cardsToShow, recentCourses.length)}%`
-                }}
-              >
-                <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col border border-gray-700">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.name}
-                    className="w-full h-40 md:h-48 object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/300x200?text=Course+Image";
-                    }}
-                  />
-                  <div className="p-4 flex flex-col flex-grow">
-                    <h3 className="text-md md:text-lg font-bold mb-2 line-clamp-2 text-gray-200">
-                      {course.name}
-                    </h3>
-                    <p className="text-gray-400 text-sm mb-2">
-                      By {course.instructor}
-                    </p>
-                    <div className="flex justify-between items-center mb-3 mt-auto">
-                      <div className="flex items-center">
-                        <span className="text-yellow-500 font-bold mr-1">
-                          {course.averageRating}
-                        </span>
-                        <svg
-                          className="w-4 h-4 text-yellow-500"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      </div>
-                      <span className="text-green-400 font-bold text-sm">
-                        {formatPrice(course.price)}
-                      </span>
-                    </div>
-                    <p className="text-gray-500 text-xs mb-3">
-                      Added: {formatDate(course.createdAt)}
-                    </p>
-                    <button className="w-full bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition text-sm">
-                      Enroll Now
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <CourseSlider
+        courses={recentCourses}
+        title="Recently Added"
+        showDate={true}
+        scrollRef={recentRef}
+      />
     </div>
   );
 };

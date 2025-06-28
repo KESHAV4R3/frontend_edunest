@@ -61,6 +61,7 @@ const DashboardPageAddcatagory = lazy(() =>
 const DashboardPageDeletecatagory = lazy(() =>
   import("./components/dashBoardpage/DashboardPageDeletecatagory")
 );
+const Earnings = lazy(() => import("./components/dashBoardpage/Earnings"));
 const DashboardInstructorCreateNewCourse = lazy(() =>
   import("./components/dashBoardpage/DashboardInstructorCreateNewCourse")
 );
@@ -245,6 +246,16 @@ function App() {
                 <NonLoggedInPrivate dashboard="true">
                   <Suspense fallback={<SimpleSpinner />}>
                     <DashboardPageSetting />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="Earnings"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <Earnings />
                   </Suspense>
                 </NonLoggedInPrivate>
               }
