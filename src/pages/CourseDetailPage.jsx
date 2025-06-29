@@ -4,6 +4,7 @@ import Footer from "../components/application/Footer";
 import { CiGlobe } from "react-icons/ci";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowForward } from "react-icons/io";
+import { FaStar, FaRegStar, FaEdit, FaTrash } from "react-icons/fa";
 import { apiConnector } from "../services/apiConnector";
 import { apiLinks } from "../services/apiLink";
 import { useLocation } from "react-router-dom";
@@ -35,20 +36,28 @@ const CourseDetailPage = () => {
   const [cartAddloading, setCartAddloading] = useState(false);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [purchaseButtonLoading, setPurchaseButtonLoading] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    review: "",
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [userReview, setUserReview] = useState(null);
+
   const paymentPageLoader = useSelector(
     (state) => state.profile.paymentLoading
   );
   const user = useSelector((state) => state.profile.user);
-  console.log(user);
+
   useEffect(() => {
     async function fetchCourse() {
       try {
-        setLoading(true); // Move setLoading(true) here
+        setLoading(true);
         let url = null;
         if (!user) {
-          // user is not logged in
           toast.warn("Login / register to continue");
-          navigate('/')
+          navigate("/");
+          return;
         }
         if (user && user.accountType == "Admin") {
           url = apiLinks.getCourseDetailByAdmin + `/${courseId}`;
@@ -56,61 +65,35 @@ const CourseDetailPage = () => {
           url = apiLinks.getCourseByIdOverview + `/${courseId}`;
         }
         const response = await apiConnector("GET", url);
-        console.log(response.data);
+
         if (!response.success) {
-          toast.error("Unable to fetch course detail", {
-            autoClose: 900,
-            hideProgressBar: true,
-            pauseOnHover: false,
-            closeOnClick: true,
-            draggable: false,
-          });
+          toast.error("Unable to fetch course detail");
           return;
-        } else {
-          const basicData = {
-            name: response.data.name,
-            description: response.data.description,
-            language: response.data.language,
-            price: response.data.price,
-            thumbnail: response.data.thumbnail,
-            averageRating: response.data.averageRating,
-          };
-          setBasicData(basicData);
-          setInstructor(response.data.instructor);
-          setWhatYouWillLearn(
-            JSON.parse(response.data.whatYouWillLearn || "[]")
-          );
-          setSections(response.data.section);
-          setRatingAndReviews(response.data.ratingAndReview || []);
-          setStudentEnrolled(response.data.studentEnrolled || []);
         }
+
+        const basicData = {
+          name: response.data.name,
+          description: response.data.description,
+          language: response.data.language,
+          price: response.data.price,
+          thumbnail: response.data.thumbnail,
+          averageRating: response.data.averageRating,
+        };
+        setBasicData(basicData);
+        setInstructor(response.data.instructor);
+        setWhatYouWillLearn(JSON.parse(response.data.whatYouWillLearn || "[]"));
+        setSections(response.data.section);
+        setRatingAndReviews(response.data.reviews || []);
+        setStudentEnrolled(response.data.studentEnrolled || []);
+        console.log(ratingAndReviews);
       } catch (error) {
-        toast.error("Error fetching course data", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        setBasicData({
-          name: "",
-          description: "",
-          language: "",
-          price: 0,
-          thumbnail: "",
-          averageRating: 0,
-        });
-        setInstructor([]);
-        setWhatYouWillLearn([]);
-        setSections([]);
-        setRatingAndReviews([]);
-        setStudentEnrolled([]);
+        toast.error("Error fetching course data");
       } finally {
-        setLoading(false); // move setLoading(false) inside finally
+        setLoading(false);
       }
     }
     fetchCourse();
-  }, []);
+  }, [courseId, user]);
 
   const toggleSection = (index) => {
     if (expandedSections.includes(index)) {
@@ -125,41 +108,19 @@ const CourseDetailPage = () => {
   };
 
   const renderRatingStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const partialStar = rating - fullStars;
-
-    for (let i = 1; i <= fullStars; i++) {
-      stars.push(
-        <span key={i} className="text-2xl text-yellow-400">
-          ★
-        </span>
-      );
-    }
-
-    if (partialStar > 0) {
-      stars.push(
-        <span key="partial" className="text-2xl text-yellow-400 relative">
-          <span
-            className="absolute overflow-hidden"
-            style={{ width: `${partialStar * 100}%` }}
-          >
-            ★
+    return (
+      <div className="flex">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span key={star} className="text-xl">
+            {star <= rating ? (
+              <FaStar className="text-yellow-400" />
+            ) : (
+              <FaRegStar className="text-yellow-400" />
+            )}
           </span>
-          <span className="text-gray-400">★</span>
-        </span>
-      );
-    }
-
-    for (let i = stars.length; i < 5; i++) {
-      stars.push(
-        <span key={i} className="text-2xl text-gray-400">
-          ★
-        </span>
-      );
-    }
-
-    return stars;
+        ))}
+      </div>
+    );
   };
 
   const formatNumber = (number) => {
@@ -171,25 +132,13 @@ const CourseDetailPage = () => {
       setCartAddloading(true);
       const url = apiLinks.insertCartCourse + `/${courseId}`;
       const response = await apiConnector("PUT", url);
-      console.log(response);
       if (!response.success) {
-        toast.error("unable to add course to cart", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
+        toast.error("Unable to add course to cart");
         return;
       }
-      toast.success("course added to cart", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
+      toast.success("Course added to cart");
     } catch (error) {
+      console.error(error);
     } finally {
       setCartAddloading(false);
     }
@@ -198,21 +147,13 @@ const CourseDetailPage = () => {
   async function purchaseHandler() {
     setPurchaseButtonLoading(true);
     if (!user) {
-      toast.info("login to purchase the course", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
+      toast.info("Login to purchase the course");
       navigate("/login");
       return;
     }
 
     try {
-      // Don't set loading here - it will be handled in buyCourse
       await buyCourse([courseId], user, navigate, (isLoading) => {
-        // This callback will control our loading state
         if (isLoading) {
           dispatch(setPaymentLoading(true));
         } else {
@@ -248,6 +189,27 @@ const CourseDetailPage = () => {
 
   return (
     <div className="bg-dark_bg min-h-screen text-white">
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .review-card {
+            transition: all 0.3s ease;
+          }
+          .review-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+          }
+        `}
+      </style>
       <div className="w-[95%] mx-auto mb-[100px] max-w-[1400px]">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 pt-8 lg:pt-20">
           {/* Left Column - Course Header and Content */}
@@ -264,7 +226,7 @@ const CourseDetailPage = () => {
                 <div className="flex items-center space-x-1">
                   {renderRatingStars(basicData.averageRating)}
                   <span className="text-gray-400 text-lg lg:text-xl ml-2">
-                    {basicData.averageRating}
+                    {basicData.averageRating.toFixed(1)}
                   </span>
                 </div>
                 <span className="text-gray-400 text-sm lg:text-base">
@@ -391,28 +353,6 @@ const CourseDetailPage = () => {
                                   >
                                     watch video
                                   </a>
-                                  {/* <video
-                                    className="w-[100px] h-[60px] object-cover rounded"
-                                    autoPlay
-                                    loop
-                                    muted
-                                    controls
-                                  >
-                                    <source
-                                      src={subsection.videoUrl}
-                                      type="video/mp4"
-                                    />
-                                    Your browser does not support the video tag.
-                                  </video> */}
-                                  {user.accounType == "Admin" && (
-                                    <a
-                                      href={`${subsection.videoUrl}`}
-                                      target="_blank"
-                                      className="text-blue-500 hover:text-red-500"
-                                    >
-                                      watch video here
-                                    </a>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -425,44 +365,45 @@ const CourseDetailPage = () => {
               </div>
             )}
 
-            {/* Reviews */}
-            {ratingAndReviews.length > 0 && (
-              <div className="bg-gray-900 p-6 lg:p-8 rounded-lg">
-                <h2 className="text-xl lg:text-2xl font-bold text-white mb-4 lg:mb-6">
-                  Reviews
-                </h2>
-                <div className="flex overflow-x-auto pb-2 gap-4 scrollbar-hide">
-                  {ratingAndReviews.map((review, index) => (
-                    <div
-                      key={index}
-                      className="flex-shrink-0 w-64 bg-gray-800 p-4 lg:p-6 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3 lg:space-x-4 mb-3 lg:mb-4">
-                        <img
-                          src={
-                            review.user?.image ||
-                            "https://ui-avatars.com/api/?name=Edunest+Edtech"
-                          }
-                          alt={review.user?.name || "User"}
-                          className="w-10 h-10 lg:w-12 lg:h-12 rounded-full"
-                        />
-                        <div>
-                          <h4 className="text-white font-semibold text-sm lg:text-base">
-                            {review.user?.name || "Anonymous"}
-                          </h4>
-                          <div className="flex items-center space-x-1">
-                            {renderRatingStars(review.rating)}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-gray-400 text-xs lg:text-sm">
-                        {review.review}
+            {/* Reviews Section */}
+            <div className="bg-gray-900 p-6 lg:p-8 rounded-lg">
+              <h2 className="text-xl lg:text-2xl font-bold text-white mb-4 lg:mb-6">
+                Reviews
+              </h2>
+              {ratingAndReviews.map((item, index) => (
+                <div
+                  key={item._id || index}
+                  className="bg-gray-800 text-white rounded-xl p-4 shadow-md border border-gray-700 max-w-md mb-4"
+                >
+                  <div className="flex items-center mb-3">
+                    <img
+                      src={item.user.image}
+                      alt={`${item.user.firstName} ${item.user.lastName}`}
+                      className="w-10 h-10 rounded-full mr-3"
+                    />
+                    <div>
+                      <p className="font-semibold">
+                        {item.user.firstName} {item.user.lastName}
                       </p>
+                      <div className="flex text-yellow-400">
+                        {[...Array(item.rating)].map((_, i) => (
+                          <svg
+                            key={i}
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                            className="w-4 h-4 mr-1"
+                          >
+                            <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.173L12 18.896l-7.336 3.874 1.402-8.173L.132 9.21l8.2-1.192z" />
+                          </svg>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <p className="text-gray-300">{item.review}</p>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
           {/* Right Column - Course Info */}

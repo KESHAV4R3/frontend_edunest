@@ -16,7 +16,6 @@ export const apiLinks = {
   signup: `${baseUrl}/auth/signup`,
   googleLogin: `${baseUrl}/auth/googleLogin`,
   googleSignUp: `${baseUrl}/auth/googleSignUp`,
-  // strema
   start: `${baseUrl}/streamRouter/start`,
   end: `${baseUrl}/streamRouter/end`,
   live: `${baseUrl}/streamRouter/live`,
@@ -61,8 +60,9 @@ export const apiLinks = {
   updateSubSection: `${baseUrl}/subSectionRouter/updateSubSection`,
   verifypayment: `${baseUrl}/razorPayPaymentIntegrationRouter/verifypayment`,
   capturePayment: `${baseUrl}/razorPayPaymentIntegrationRouter/capturePayment`,
-  addRatingAndReview: `${baseUrl}/ratingAndReviewRouter/addRatingAndReview`,
-  sendComment: `${baseUrl}/ratingAndReviewRouter/sendComment`,
-  editComment: `${baseUrl}/ratingAndReviewRouter/editComment`,
-  getAllRatings: `${baseUrl}/ratingAndReviewRouter/getAllRatings`,
+  addReview: `${baseUrl}/RatingAndReview/add`,
+  deleteReview: `${baseUrl}/RatingAndReview/delete`,
+  updateReview: `${baseUrl}/RatingAndReview/update`,
+  top_review: `${baseUrl}/RatingAndReview/top-comments`,
+  getReview: `${baseUrl}/RatingAndReview/review`,
 };
