@@ -1,4 +1,4 @@
-const baseUrl = "http://localhost:4000/";
+const baseUrl = "http://localhost:4000";
 
 // to get reset password token
 const currentUrl = window.location.href;
