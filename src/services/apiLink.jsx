@@ -1,4 +1,4 @@
-const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
+const baseUrl = "http://localhost:4000/";
 
 // to get reset password token
 const currentUrl = window.location.href;
