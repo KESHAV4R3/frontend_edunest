@@ -1,4 +1,4 @@
-const baseUrl = "http://localhost:4000/EDUNEST/api/v1/";
+const baseUrl = "http://localhost:4000/EDUNEST/api/v1";
 
 // to get reset password token
 const currentUrl = window.location.href;
