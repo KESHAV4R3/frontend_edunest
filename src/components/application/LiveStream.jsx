@@ -7,63 +7,63 @@ const LiveStream = ({ roomId }) => {
   const remoteVideoRef = useRef(null);
   const peerRef = useRef(null);
 
-useEffect(() => {
-  if (!roomId) return;
+  useEffect(() => {
+    if (!roomId) return;
 
-  const Peer = require("simple-peer");
+    const Peer = require("simple-peer");
 
-  const startStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const startStream = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+
+        socket.emit("join-room", roomId);
+
+        socket.on("user-joined", (id) => {
+          const peer = createPeer(id, socket.id, stream);
+          peerRef.current = peer;
+        });
+
+        socket.on("signal", ({ from, data }) => {
+          peerRef.current?.signal(data);
+        });
+      } catch (err) {
+        console.error("Camera Access Error:", err);
       }
+    };
 
-      socket.emit("join-room", roomId);
+    const createPeer = (userToSignal, callerID, stream) => {
+      const peer = new Peer({ initiator: true, trickle: false, stream });
 
-      socket.on("user-joined", (id) => {
-        const peer = createPeer(id, socket.id, stream);
-        peerRef.current = peer;
+      peer.on("signal", (signal) => {
+        socket.emit("signal", {
+          to: userToSignal,
+          from: callerID,
+          data: signal,
+        });
       });
 
-      socket.on("signal", ({ from, data }) => {
-        peerRef.current?.signal(data);
+      peer.on("stream", (remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
       });
-    } catch (err) {
-      console.error("Camera Access Error:", err);
-    }
-  };
 
-  const createPeer = (userToSignal, callerID, stream) => {
-    const peer = new Peer({ initiator: true, trickle: false, stream });
+      return peer;
+    };
 
-    peer.on("signal", (signal) => {
-      socket.emit("signal", {
-        to: userToSignal,
-        from: callerID,
-        data: signal,
-      });
-    });
+    startStream();
 
-    peer.on("stream", (remoteStream) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
-      }
-    });
-
-    return peer;
-  };
-
-  startStream();
-
-  return () => {
-    // Don't disconnect socket globally, just remove listeners
-    socket.off("user-joined");
-    socket.off("signal");
-    peerRef.current?.destroy();
-  };
-}, [roomId]);
+    return () => {
+      // Don't disconnect socket globally, just remove listeners
+      socket.off("user-joined");
+      socket.off("signal");
+      peerRef.current?.destroy();
+    };
+  }, [roomId]);
 
 
   return (
@@ -80,4 +80,4 @@ useEffect(() => {
   );
 };
 
-export default LiveStream;
+export default React.memo(LiveStream);

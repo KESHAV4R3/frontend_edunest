@@ -4,10 +4,15 @@ import { FcGoogle } from "react-icons/fc";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const GoogleLoginButton = ({ onSuccessLogin }) => {
+  const dispatch = useDispatch();
+
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
+      dispatch(setLoading(true));
       try {
         const response = await apiConnector(
           "POST",
@@ -31,6 +36,8 @@ const GoogleLoginButton = ({ onSuccessLogin }) => {
       } catch (error) {
         console.error("Google login error:", error);
         toast.error("Google login failed");
+      } finally {
+        dispatch(setLoading(false));
       }
     },
     onError: (err) => {
@@ -51,4 +58,4 @@ const GoogleLoginButton = ({ onSuccessLogin }) => {
   );
 };
 
-export default GoogleLoginButton;
+export default React.memo(GoogleLoginButton);

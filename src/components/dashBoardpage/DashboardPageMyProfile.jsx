@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RxCross2 } from "react-icons/rx";
 import { FaEdit } from "react-icons/fa";
@@ -7,11 +7,11 @@ import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { setProfile, setPersonalData } from "../../redux/slices/profileSlice";
 import { MdSecurityUpdateGood } from "react-icons/md";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const DashboardPageMyProfile = () => {
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
-  const [personalLoading, setPersonalLoading] = useState(false);
+  const { loading } = useSelector((state) => state.ui);
   const [editMyProfile, setEditMyProfile] = useState(false);
   const [editPersonalInfo, setEditPersonalInfo] = useState(false);
   const { user, personalData } = useSelector((state) => state.profile);
@@ -41,14 +41,14 @@ const DashboardPageMyProfile = () => {
     });
   }, [personalData]);
 
-  const updatePersonalHandler = (event) => {
+  const updatePersonalHandler = useCallback((event) => {
     setUpdatedPersonalInfo((prevData) => ({
       ...prevData,
       [event.target.name]: event.target.value,
     }));
-  };
+  }, []);
 
-  const updateProfileHandler = (event) => {
+  const updateProfileHandler = useCallback((event) => {
     const file = event.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
@@ -57,11 +57,11 @@ const DashboardPageMyProfile = () => {
         imageUrl,
       });
     }
-  };
+  }, []);
 
   const updateProfileBackendCall = async () => {
     try {
-      setLoading(true);
+      dispatch(setLoading(true));
       const formData = new FormData();
       formData.append("profilePicture", updatedProfile.image);
 
@@ -94,13 +94,13 @@ const DashboardPageMyProfile = () => {
         draggable: false,
       });
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
   const updatePersonalDataBackendCall = async () => {
     try {
-      setPersonalLoading(true);
+      dispatch(setLoading(true));
       const response = await apiConnector(
         "PUT",
         apiLinks.updateProfile,
@@ -128,7 +128,7 @@ const DashboardPageMyProfile = () => {
         draggable: false,
       });
     } finally {
-      setPersonalLoading(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -362,10 +362,10 @@ const DashboardPageMyProfile = () => {
             <button
               type="submit"
               onClick={updatePersonalDataBackendCall}
-              disabled={personalLoading}
+              disabled={loading}
               className="flex justify-center items-center gap-2 bg-dark_red cursor-pointer text-white font-semibold p-3 rounded-lg hover:bg-dark_red/80 transition-all duration-300 disabled:opacity-50"
             >
-              {personalLoading ? (
+              {loading ? (
                 <div className="w-5 h-5 border-4 border-gray-300 border-t-dark_red rounded-full animate-spin"></div>
               ) : (
                 "Update Profile"
@@ -449,4 +449,4 @@ const DashboardPageMyProfile = () => {
   );
 };
 
-export default DashboardPageMyProfile;
+export default React.memo(DashboardPageMyProfile);

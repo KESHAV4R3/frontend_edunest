@@ -19,7 +19,7 @@ const DashboardPageStudentAdmin = () => {
               gender: value.profile.gender,
               profession: value.profile.profession,
               about: value.profile.about.substring(0, 15),
-              id:value._id
+              id: value._id
             };
             return <UserCard user={student} type={"Student"} key={index} />;
           })
@@ -34,4 +34,4 @@ const DashboardPageStudentAdmin = () => {
   );
 };
 
-export default DashboardPageStudentAdmin;
+export default React.memo(DashboardPageStudentAdmin);

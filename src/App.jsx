@@ -8,6 +8,9 @@ import NonLoggedInPrivate from "./privateRoutePath/NonLoggedInPrivate";
 import ForgotPasswordPrivate from "./privateRoutePath/ForgotPasswordPrivate";
 import CourseCreatePrivate from "./privateRoutePath/CourseCreatePrivate";
 
+import GlobalLoading from "./components/common/GlobalLoading";
+import GlobalError from "./components/common/GlobalError";
+
 // Lazy load all page components
 const HomePage = lazy(() => import("./pages/HomePage"));
 const Header = lazy(() => import("./components/application/Header"));
@@ -15,70 +18,34 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResendEmailPage = lazy(() => import("./pages/ResendEmailPage"));
-const CreateNewPasswordPage = lazy(() =>
-  import("./pages/CreateNewPasswordPage")
-);
+const CreateNewPasswordPage = lazy(() => import("./pages/CreateNewPasswordPage"));
 const ResetCompletePage = lazy(() => import("./pages/ResetCompletePage"));
 const VerifyMailPage = lazy(() => import("./pages/VerifyMailPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const DashboardPageMyProfile = lazy(() => import("./components/dashBoardpage/DashboardPageMyProfile"));
+const DashboardMessageToUser = lazy(() => import("./components/dashBoardpage/DashboardMessageToUser"));
+const DashboardPageCourses = lazy(() => import("./components/dashBoardpage/DashboardPageCourses"));
+const DashboardPageSetting = lazy(() => import("./components/dashBoardpage/DashboardPageSetting"));
+const Earnings = lazy(() => import("./components/dashBoardpage/Earnings"));
+const DashboardPageInstructorAdmin = lazy(() => import("./components/dashBoardpage/DashboardPageInstructorAdmin"));
+const DashboardPageStudentAdmin = lazy(() => import("./components/dashBoardpage/DashboardPageStudentAdmin"));
+const DashboardLiveStream = lazy(() => import("./components/dashBoardpage/DashboardLiveStream"));
+const DashboardAccountSetting = lazy(() => import("./components/dashBoardpage/DashboardAccountSetting"));
+const DashboardPageAddcatagory = lazy(() => import("./components/dashBoardpage/DashboardPageAddcatagory"));
+const DashboardPageDeletecatagory = lazy(() => import("./components/dashBoardpage/DashboardPageDeletecatagory"));
+const DashboardInstructorCreateNewCourse = lazy(() => import("./components/dashBoardpage/DashboardInstructorCreateNewCourse"));
+const DashboardInstructorCreateNewSection = lazy(() => import("./components/dashBoardpage/DashboardInstructorCreateNewSection"));
+const DashboardInstructorCreateNewSubsection = lazy(() => import("./components/dashBoardpage/DashboardInstructorCreateNewSubsection"));
+const DashboardInstructorCreateNewCourseSuccessful = lazy(() => import("./components/dashBoardpage/DashboardInstructorCreateNewCourseSuccessful"));
+const CourseCompleteViewBuStudent = lazy(() => import("./pages/CourseCompleteViewBuStudent"));
 const AboutUsPage = lazy(() => import("./pages/AboutUsPage"));
 const ContactUsPage = lazy(() => import("./pages/ContactUsPage"));
+const SearchResult = lazy(() => import("./pages/SearchResult"));
 const ViewAllCatagory = lazy(() => import("./pages/ViewAllCatagory"));
 const CatagoryCourse = lazy(() => import("./pages/CatagoryCourse"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
-const CourseCompleteViewBuStudent = lazy(() =>
-  import("./pages/CourseCompleteViewBuStudent")
-);
-const SearchResult = lazy(() => import("./pages/SearchResult"));
 const PageNotFound = lazy(() => import("./pages/PageNotFound"));
-
-// Lazy load dashboard components
-const DashboardPageMyProfile = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageMyProfile")
-);
-const DashboardMessageToUser = lazy(() =>
-  import("./components/dashBoardpage/DashboardMessageToUser")
-);
-const DashboardPageCourses = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageCourses")
-);
-const DashboardPageSetting = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageSetting")
-);
-const DashboardPageInstructorAdmin = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageInstructorAdmin")
-);
-const DashboardPageStudentAdmin = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageStudentAdmin")
-);
-const DashboardAccountSetting = lazy(() =>
-  import("./components/dashBoardpage/DashboardAccountSetting")
-);
-const DashboardPageAddcatagory = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageAddcatagory")
-);
-const DashboardPageDeletecatagory = lazy(() =>
-  import("./components/dashBoardpage/DashboardPageDeletecatagory")
-);
-const Earnings = lazy(() => import("./components/dashBoardpage/Earnings"));
-const DashboardInstructorCreateNewCourse = lazy(() =>
-  import("./components/dashBoardpage/DashboardInstructorCreateNewCourse")
-);
-const DashboardInstructorCreateNewSection = lazy(() =>
-  import("./components/dashBoardpage/DashboardInstructorCreateNewSection")
-);
-const DashboardInstructorCreateNewSubsection = lazy(() =>
-  import("./components/dashBoardpage/DashboardInstructorCreateNewSubsection")
-);
-const DashboardInstructorCreateNewCourseSuccessful = lazy(() =>
-  import(
-    "./components/dashBoardpage/DashboardInstructorCreateNewCourseSuccessful"
-  )
-);
-const DashboardLiveStream = lazy(() =>
-  import("./components/dashBoardpage/DashboardLiveStream")
-);
 
 function App() {
   const dispatch = useDispatch();
@@ -109,9 +76,12 @@ function App() {
 
   return (
     <div className="perspective-1000 bg-dark_bg overflow-x-hidden overflow-y-auto w-full h-screen">
+      <GlobalLoading />
+      <GlobalError />
       <Suspense fallback={null}>
         <Header />
       </Suspense>
+
 
       {loading ? (
         <SimpleSpinner />

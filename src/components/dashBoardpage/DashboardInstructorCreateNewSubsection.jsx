@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiConnector } from "../../services/apiConnector";
@@ -6,13 +6,16 @@ import { apiLinks } from "../../services/apiLink";
 import { IoSend } from "react-icons/io5";
 import { FaRegFileVideo, FaTimes, FaRegEdit, FaCheck } from "react-icons/fa";
 import { MdDelete, MdCancel } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const DashboardInstructorCreateNewSubsection = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const sectionId = searchParams.get("section_id");
   const [subsections, setSubsections] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loading } = useSelector((state) => state.ui);
 
   // For new subsection creation
   const [newSubsection, setNewSubsection] = useState({
@@ -32,12 +35,12 @@ const DashboardInstructorCreateNewSubsection = () => {
 
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef(null);
 
   // Fetch all subsections
-  const fetchAllSubsections = async () => {
+  const fetchAllSubsections = useCallback(async () => {
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector(
         "GET",
@@ -52,28 +55,30 @@ const DashboardInstructorCreateNewSubsection = () => {
     } catch (error) {
       console.error("Error fetching subsections:", error);
       toast.error("Failed to fetch subsections");
+    } finally {
+      dispatch(setLoading(false));
     }
-  };
+  }, [sectionId, dispatch]);
 
   useEffect(() => {
     fetchAllSubsections();
-  }, [sectionId]);
+  }, [fetchAllSubsections]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setNewSubsection((prevData) => ({
       ...prevData,
       [name]: value,
     }));
-  };
+  }, []);
 
-  const handleEditInputChange = (e) => {
+  const handleEditInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setEditedSubsection((prevData) => ({
       ...prevData,
       [name]: value,
     }));
-  };
+  }, []);
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
@@ -100,34 +105,33 @@ const DashboardInstructorCreateNewSubsection = () => {
     }
   };
 
-  const cancelVideoUpload = () => {
+  const cancelVideoUpload = useCallback(() => {
     if (videoPreview) URL.revokeObjectURL(videoPreview);
     setVideoFile(null);
     setVideoPreview(null);
     setFileName("");
-    setUploadProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  }, [videoPreview]);
 
   // Start editing a subsection
-  const startEditing = (subsection) => {
+  const startEditing = useCallback((subsection) => {
     setEditingSubsectionId(subsection._id);
     setEditedSubsection({
       title: subsection.title,
       timeDuration: subsection.timeDuration,
       description: subsection.description,
     });
-  };
+  }, []);
 
   // Cancel editing
-  const cancelEditing = () => {
+  const cancelEditing = useCallback(() => {
     setEditingSubsectionId(null);
     setEditedSubsection({
       title: "",
       timeDuration: "",
       description: "",
     });
-  };
+  }, []);
 
   // Create new subsection
   const handleSubmit = async (e) => {
@@ -146,7 +150,7 @@ const DashboardInstructorCreateNewSubsection = () => {
     }
 
     try {
-      setIsSubmitting(true);
+      dispatch(setLoading(true));
       const formData = new FormData();
       formData.append("uploadedVideoFile", videoFile);
       formData.append("title", newSubsection.title);
@@ -170,7 +174,8 @@ const DashboardInstructorCreateNewSubsection = () => {
         hideProgressBar: true,
       });
 
-      // Refresh the list
+      // Refresh the list - we can just call it directly or rely on state update if we returned the new subsection
+      // Re-fetching is safer to ensure sync
       await fetchAllSubsections();
 
       // Reset form
@@ -185,14 +190,14 @@ const DashboardInstructorCreateNewSubsection = () => {
       console.error("Error:", error);
       toast.error(error.message || "Something went wrong");
     } finally {
-      setIsSubmitting(false);
+      dispatch(setLoading(false));
     }
   };
 
   // Update existing subsection
   const handleUpdate = async (subsectionId) => {
     try {
-      setIsSubmitting(true);
+      dispatch(setLoading(true));
       const data = {
         subSectionId: subsectionId,
         title: editedSubsection.title,
@@ -220,13 +225,22 @@ const DashboardInstructorCreateNewSubsection = () => {
         return;
       }
 
-      subsections.forEach((element) => {
-        if (element._id == subsectionId) {
-          element.title = data.title || element.title;
-          element.timeDuration = data.timeDuration || element.timeDuration;
-          element.description = data.description || element.description;
-        }
-      });
+      // Optimistic update or re-fetch
+      // Here we update local state to avoid re-fetch if possible, but re-fetch is safer.
+      // The original code updated local state.
+      setSubsections((prev) =>
+        prev.map((element) => {
+          if (element._id == subsectionId) {
+            return {
+              ...element,
+              title: data.title || element.title,
+              timeDuration: data.timeDuration || element.timeDuration,
+              description: data.description || element.description,
+            };
+          }
+          return element;
+        })
+      );
 
       toast.success("Subsection updated successfully", {
         autoClose: 900,
@@ -237,14 +251,14 @@ const DashboardInstructorCreateNewSubsection = () => {
       console.error("Error:", error);
       toast.error(error.message || "Something went wrong");
     } finally {
-      setIsSubmitting(false);
+      dispatch(setLoading(false));
     }
   };
 
   // Delete subsection
   const deleteSubsection = async (subsectionId) => {
     try {
-      setIsSubmitting(true);
+      dispatch(setLoading(true));
       const url =
         apiLinks.deleteSubSection +
         `/${sectionId}?subSectionId=${subsectionId}`;
@@ -273,7 +287,7 @@ const DashboardInstructorCreateNewSubsection = () => {
     } catch (error) {
       toast.error(error.message || "Something went wrong");
     } finally {
-      setIsSubmitting(false);
+      dispatch(setLoading(false));
     }
   };
 
@@ -392,7 +406,7 @@ const DashboardInstructorCreateNewSubsection = () => {
                       <button
                         onClick={() => handleUpdate(subsection._id)}
                         type="button"
-                        disabled={isSubmitting}
+                        disabled={loading}
                         className="px-3 py-1.5 text-sm rounded-md cursor-pointer bg-green-900/50 text-green-400 hover:bg-green-800/50 flex items-center disabled:opacity-50"
                       >
                         <FaCheck className="mr-2" />
@@ -405,11 +419,10 @@ const DashboardInstructorCreateNewSubsection = () => {
                         onClick={() => startEditing(subsection)}
                         type="button"
                         disabled={editingSubsectionId !== null}
-                        className={`px-3 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 flex items-center ${
-                          editingSubsectionId !== null
+                        className={`px-3 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 flex items-center ${editingSubsectionId !== null
                             ? "opacity-50 cursor-not-allowed"
                             : "cursor-pointer"
-                        }`}
+                          }`}
                       >
                         <FaRegEdit className="mr-2" />
                         Edit
@@ -417,12 +430,11 @@ const DashboardInstructorCreateNewSubsection = () => {
                       <button
                         onClick={() => deleteSubsection(subsection._id)}
                         type="button"
-                        disabled={editingSubsectionId !== null || isSubmitting}
-                        className={`px-3 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 flex items-center ${
-                          editingSubsectionId !== null || isSubmitting
+                        disabled={editingSubsectionId !== null || loading}
+                        className={`px-3 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 flex items-center ${editingSubsectionId !== null || loading
                             ? "opacity-50 cursor-not-allowed"
                             : "cursor-pointer"
-                        }`}
+                          }`}
                       >
                         <MdDelete className="mr-2" />
                         Delete
@@ -458,7 +470,7 @@ const DashboardInstructorCreateNewSubsection = () => {
               onChange={handleInputChange}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md  outline-none focus:border-2"
               required
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
@@ -477,7 +489,7 @@ const DashboardInstructorCreateNewSubsection = () => {
               value={newSubsection.timeDuration}
               onChange={handleInputChange}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:border-2 outline-none  "
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
@@ -497,7 +509,7 @@ const DashboardInstructorCreateNewSubsection = () => {
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md  focus:border-2 outline-none"
               rows="3"
               required
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
@@ -507,9 +519,8 @@ const DashboardInstructorCreateNewSubsection = () => {
               Video <span className="text-red-500 ml-1">*</span>
             </label>
             <div
-              className={`border-2 border-dashed ${
-                videoFile ? "border-green-500" : "border-gray-400"
-              } rounded-lg p-6 text-center transition-colors`}
+              className={`border-2 border-dashed ${videoFile ? "border-green-500" : "border-gray-400"
+                } rounded-lg p-6 text-center transition-colors`}
             >
               <div className="flex justify-center items-center flex-col">
                 {videoPreview ? (
@@ -569,17 +580,17 @@ const DashboardInstructorCreateNewSubsection = () => {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              disabled={isSubmitting}
+              disabled={loading}
               className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !videoFile}
+              disabled={loading || !videoFile}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isSubmitting ? (
+              {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
                   Submitting...
@@ -598,4 +609,4 @@ const DashboardInstructorCreateNewSubsection = () => {
   );
 };
 
-export default DashboardInstructorCreateNewSubsection;
+export default React.memo(DashboardInstructorCreateNewSubsection);

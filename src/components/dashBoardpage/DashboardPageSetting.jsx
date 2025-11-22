@@ -6,4 +6,4 @@ const DashboardPageSetting = () => {
   )
 }
 
-export default DashboardPageSetting
+export default React.memo(DashboardPageSetting)

@@ -1,25 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { MdDelete } from "react-icons/md";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
   setAllStudents,
   setAllInstructors,
 } from "../../redux/slices/profileSlice";
-import { useSelector } from "react-redux";
+import { setLoading } from "../../redux/slices/uiSlice";
+
 const UserCard = ({ user, type }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const { allStudents, allInstructors } = useSelector((state) => state.profile);
-  const [messageToUser, setMessageToUser] = useState(false);
+  const { loading } = useSelector((state) => state.ui);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Click handler
-  async function clickHandler(event) {
-    setLoading(true);
+  const clickHandler = useCallback(async (event) => {
+    setIsDeleting(true);
+    dispatch(setLoading(true));
     try {
       const url = apiLinks.deleteAccountByAdmin + `/${user.id}`;
       const response = await apiConnector("DELETE", url);
@@ -62,19 +64,20 @@ const UserCard = ({ user, type }) => {
     } catch (error) {
       console.log(error);
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
+      dispatch(setLoading(false));
     }
-  }
+  }, [allStudents, allInstructors, dispatch, type, user.id]);
 
   // send mail to user function
-  function sendmailToUser() {
+  const sendmailToUser = useCallback(() => {
     const data = {
       name: user.name,
       email: user.email,
     };
     localStorage.setItem("MailUserData", JSON.stringify(data));
     navigate(`/dashboard/message-from-user`);
-  }
+  }, [navigate, user.name, user.email]);
 
   return (
     <div className="w-[400px] bg-gray-800 rounded-lg shadow-md overflow-hidden p-6 border border-gray-700 hover:border-indigo-400 transition-all duration-300 hover:shadow-lg hover:shadow-indigo-900/20">
@@ -87,7 +90,7 @@ const UserCard = ({ user, type }) => {
           className="cursor-pointer absolute right-0 top-0 bg-red-600 hover:bg-red-700 rounded-full w-8 h-8 flex justify-center items-center transition-colors duration-200 disabled:cursor-not-allowed"
           title="Delete user"
         >
-          {loading ? (
+          {isDeleting ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           ) : (
             <MdDelete className="text-lg text-white" />
@@ -156,4 +159,4 @@ const UserCard = ({ user, type }) => {
   );
 };
 
-export default UserCard;
+export default React.memo(UserCard);

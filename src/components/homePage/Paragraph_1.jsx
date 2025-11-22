@@ -1,3 +1,4 @@
+import React from "react";
 
 const Paragraph_1 = ({
   data1,
@@ -11,10 +12,9 @@ const Paragraph_1 = ({
       <p
         className={`e
           ${back == "white" ? "text-black" : "text-white"}
-          ${
-            container == "true"
-              ? " text-[27px] tablet:text-[35px]"
-              : "text-[32px] tablet:text-[42px]"
+          ${container == "true"
+            ? " text-[27px] tablet:text-[35px]"
+            : "text-[32px] tablet:text-[42px]"
           } font-[800] text-center tablet:text-start`}
         style={{ fontFamily: "Fira Code, monospace" }}
       >
@@ -28,4 +28,4 @@ const Paragraph_1 = ({
   );
 };
 
-export default Paragraph_1;
+export default React.memo(Paragraph_1);

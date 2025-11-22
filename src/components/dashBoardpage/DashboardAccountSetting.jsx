@@ -1,21 +1,62 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { MdDeleteForever } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
+import { setProfile, setPersonalData } from "../../redux/slices/profileSlice";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const DashboardAccountSetting = () => {
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state) => state.profile.user);
+  const { loading } = useSelector((state) => state.ui);
+
+  // logout function
+  async function logout() {
+    try {
+      const response = await apiConnector("POST", apiLinks.logout);
+      if (!response.success) {
+        toast.error("unable to log-out", {
+          autoClose: 900,
+          hideProgressBar: true,
+          pauseOnHover: false,
+          closeOnClick: true,
+          draggable: false,
+        });
+      } else {
+        toast.info("log-out successfull", {
+          autoClose: 900,
+          hideProgressBar: true,
+          pauseOnHover: false,
+          closeOnClick: true,
+          draggable: false,
+        });
+        dispatch(setProfile(null));
+        dispatch(setPersonalData(null));
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error("something went wrong during logout", {
+        autoClose: 900,
+        hideProgressBar: true,
+        pauseOnHover: false,
+        closeOnClick: true,
+        draggable: false,
+      });
+    }
+  }
+
   // delete account
   async function deleteAccount() {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete your account permanently?"
     );
     if (!confirmDelete) return;
-    setDeleteLoading(true);
+
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector("DELETE", apiLinks.deleteAccount);
       if (!response.success) {
@@ -35,12 +76,13 @@ const DashboardAccountSetting = () => {
           closeOnClick: true,
           draggable: false,
         });
-        logout(); // Make sure this is defined
+        await logout();
       }
     } catch (error) {
       console.error(error);
+      toast.error("Error deleting account");
     } finally {
-      setDeleteLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
@@ -65,11 +107,11 @@ const DashboardAccountSetting = () => {
           </p>
 
           <button
-            disabled={deleteLoading}
+            disabled={loading}
             onClick={deleteAccount}
             className="mt-2 cursor-pointer px-6 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition duration-200 disabled:cursor-not-allowed"
           >
-            {deleteLoading ? (
+            {loading ? (
               <div className="w-5 h-5 border-4 border-gray-300 border-t-dark_red rounded-full animate-spin"></div>
             ) : (
               "Yes, Delete My Account"
@@ -83,4 +125,4 @@ const DashboardAccountSetting = () => {
   );
 };
 
-export default DashboardAccountSetting;
+export default React.memo(DashboardAccountSetting);

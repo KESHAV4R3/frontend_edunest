@@ -36,4 +36,4 @@ const DashboardPageInstructorAdmin = () => {
   );
 };
 
-export default DashboardPageInstructorAdmin;
+export default React.memo(DashboardPageInstructorAdmin);

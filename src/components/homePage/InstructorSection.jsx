@@ -67,4 +67,4 @@ const InstructorSection = () => {
   );
 };
 
-export default InstructorSection;
+export default React.memo(InstructorSection);

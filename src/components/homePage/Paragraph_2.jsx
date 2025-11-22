@@ -1,13 +1,12 @@
+import React from "react";
 
 const Paragraph_2 = ({ data, container = "false", back }) => {
   return (
     <div>
       <p
-        className={`${
-          back == "white" ? "text-gray-700" : "text-[#b1b1b1]"
-        } text-[18px] m-auto max-w-[1200px] ${
-          container == "true" ? "w-full" : " w-[90%]"
-        } tablet:text-[20px] tracking-wide text-center tablet:text-start`}
+        className={`${back == "white" ? "text-gray-700" : "text-[#b1b1b1]"
+          } text-[18px] m-auto max-w-[1200px] ${container == "true" ? "w-full" : " w-[90%]"
+          } tablet:text-[20px] tracking-wide text-center tablet:text-start`}
       >
         {data}
       </p>
@@ -15,4 +14,4 @@ const Paragraph_2 = ({ data, container = "false", back }) => {
   );
 };
 
-export default Paragraph_2;
+export default React.memo(Paragraph_2);

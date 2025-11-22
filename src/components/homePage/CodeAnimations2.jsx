@@ -167,4 +167,4 @@ const CodeAnimations2 = ({ cardNumber }) => {
   );
 };
 
-export default CodeAnimations2;
+export default React.memo(CodeAnimations2);

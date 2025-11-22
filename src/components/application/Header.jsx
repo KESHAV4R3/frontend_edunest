@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import edunest_logo from "../../assets/edunest_logo.png";
 import { IoIosSearch, IoMdMenu } from "react-icons/io";
 import { MdKeyboardArrowDown } from "react-icons/md";
@@ -17,10 +17,13 @@ import { toast } from "react-toastify";
 import { RxCross2 } from "react-icons/rx";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoSearch } from "react-icons/io5";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const Header = () => {
   const user = useSelector((state) => state.profile.user);
-  let navOptions = [
+  const { loading } = useSelector((state) => state.ui);
+
+  const navOptions = useMemo(() => [
     {
       name: "Home",
       location: "/",
@@ -32,15 +35,16 @@ const Header = () => {
     ...(user?.accountType == "Admin"
       ? []
       : [
-          {
-            name: "About Us",
-            location: "/about-us",
-          },
-        ]),
+        {
+          name: "About Us",
+          location: "/about-us",
+        },
+      ]),
     ...(user?.accountType === "Admin"
       ? []
       : [{ name: "Contact Us", location: "/contact-us" }]),
-  ];
+  ], [user?.accountType]);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [searchLoading, setSearchLoading] = useState(false);
@@ -59,7 +63,7 @@ const Header = () => {
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  console.log(catagories);
+  // console.log(catagories);
   // to update side menu
   const updateSideMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
@@ -73,8 +77,9 @@ const Header = () => {
   }, []);
 
   // logout
-  async function logout() {
+  const logout = useCallback(async () => {
     updateSideMenu();
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector("POST", apiLinks.logout);
       if (!response.success) {
@@ -105,8 +110,10 @@ const Header = () => {
         closeOnClick: true,
         draggable: false,
       });
+    } finally {
+      dispatch(setLoading(false));
     }
-  }
+  }, [dispatch, navigate, updateSideMenu]);
 
   // to make the catalog popup visible
   const updateCatalogDisplay = useCallback((name) => {
@@ -125,6 +132,7 @@ const Header = () => {
 
   // fetch catagory data
   const fetchCatagoryData = useCallback(async () => {
+    // dispatch(setLoading(true)); // Optional: might not want to show global loader for background fetch
     try {
       const response = await apiConnector("GET", apiLinks.get_catagory_list);
       if (response.success) {
@@ -136,7 +144,10 @@ const Header = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }, []);
+    // finally {
+    //   dispatch(setLoading(false));
+    // }
+  }, [dispatch]);
 
   // to handle cursor at the window
   useEffect(() => {
@@ -172,7 +183,7 @@ const Header = () => {
     } catch (error) {
       console.log(error);
     }
-  }, [user]);
+  }, [user, fetchCatagoryData]);
 
   // console.log(user.accountType)
 
@@ -185,7 +196,7 @@ const Header = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  function updateSearchData(event) {
+  const updateSearchData = useCallback((event) => {
     const value = event.target.value;
     setSearchData(value);
 
@@ -201,9 +212,9 @@ const Header = () => {
       setShowSuggestions(false);
       setSearchSuggestions([]);
     }
-  }
+  }, [catagories, searchOpen]);
 
-  async function searchResponse(event, suggestion = null) {
+  const searchResponse = useCallback(async (event, suggestion = null) => {
     const searchTerm = suggestion || searchData;
 
     if (searchTerm.trim().length === 0) {
@@ -214,7 +225,7 @@ const Header = () => {
     setSearchOpen(false);
     setShowSuggestions(false);
     navigate(`/search/${encodeURIComponent(searchTerm)}`);
-  }
+  }, [searchData, navigate]);
 
   return (
     <div>
@@ -259,10 +270,9 @@ const Header = () => {
                 <div
                   className={`fixed top-24 left-1/2 transform -translate-x-1/2 w-[80vw] max-w-[900px] bg-dark_bg border border-gray-700 text-white p-6 rounded-lg shadow-2xl z-20
                     transition-all duration-200 ease-in-out overflow-hidden
-                    ${
-                      catalogDisplay
-                        ? "opacity-100 translate-y-0 visible"
-                        : "opacity-0 -translate-y-2 invisible"
+                    ${catalogDisplay
+                      ? "opacity-100 translate-y-0 visible"
+                      : "opacity-0 -translate-y-2 invisible"
                     }`}
                   onMouseEnter={() => setCatalogDisplay(true)}
                   onMouseLeave={() => setCatalogDisplay(false)}
@@ -664,4 +674,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default React.memo(Header);

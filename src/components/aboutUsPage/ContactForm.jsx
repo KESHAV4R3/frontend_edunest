@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { toast } from "react-toastify";
 import { FiSend } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { setLoading, setError } from "../../redux/slices/uiSlice";
 
 const ContactForm = () => {
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  // We can use local loading for the button spinner if we want, 
+  // or use the global loading state. 
+  // Using global loading state as requested.
+  const { loading } = useSelector((state) => state.ui);
 
   const {
     register,
@@ -23,7 +29,7 @@ const ContactForm = () => {
 
   // function to send message to user
   async function submitMessage(data) {
-    setLoading(true);
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector(
         "POST",
@@ -56,6 +62,7 @@ const ContactForm = () => {
         draggable: false,
       });
     } catch (error) {
+      dispatch(setError("Something went wrong while sending message"));
       toast.error("Something went wrong", {
         autoClose: 900,
         hideProgressBar: true,
@@ -64,7 +71,7 @@ const ContactForm = () => {
         draggable: false,
       });
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
@@ -170,4 +177,4 @@ const ContactForm = () => {
   );
 };
 
-export default ContactForm;
+export default React.memo(ContactForm);

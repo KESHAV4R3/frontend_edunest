@@ -6,4 +6,4 @@ const DashboardInstructorCreateNewCourseSuccessful = () => {
   )
 }
 
-export default DashboardInstructorCreateNewCourseSuccessful
+export default React.memo(DashboardInstructorCreateNewCourseSuccessful)

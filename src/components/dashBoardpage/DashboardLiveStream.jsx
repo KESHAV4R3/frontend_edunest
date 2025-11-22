@@ -26,8 +26,8 @@ const DashboardLiveStream = () => {
         We're working hard to bring you an amazing live streaming experience. This feature will be available soon!
       </p>
       <div className="w-full max-w-sm bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-        <div 
-          className="bg-blue-600 h-2.5 rounded-full animate-pulse" 
+        <div
+          className="bg-blue-600 h-2.5 rounded-full animate-pulse"
           style={{ width: '65%' }}
         ></div>
       </div>
@@ -38,4 +38,4 @@ const DashboardLiveStream = () => {
   );
 };
 
-export default DashboardLiveStream;
+export default React.memo(DashboardLiveStream);

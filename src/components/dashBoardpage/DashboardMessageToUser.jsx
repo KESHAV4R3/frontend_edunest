@@ -5,16 +5,21 @@ import { toast } from "react-toastify";
 import { FiSend } from "react-icons/fi";
 import { RxCross2 } from "react-icons/rx";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setLoading } from "../../redux/slices/uiSlice";
+
 const DashboardMessageToUser = () => {
   const [data, setData] = useState({ name: "", email: "" });
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.ui);
+
   useEffect(() => {
     if (localStorage.getItem("MailUserData")) {
       setData(JSON.parse(localStorage.getItem("MailUserData")));
     }
   }, []);
 
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
@@ -23,7 +28,7 @@ const DashboardMessageToUser = () => {
 
   async function submitMessage(e) {
     e.preventDefault();
-    setLoading(true);
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector(
         "POST",
@@ -59,7 +64,7 @@ const DashboardMessageToUser = () => {
     } finally {
       setMessage("");
       localStorage.removeItem("MailUserData");
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
@@ -97,23 +102,23 @@ const DashboardMessageToUser = () => {
           />
         </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-5 flex justify-center items-center py-2 px-4 bg-dark_red hover:bg-dark_red/80 cursor-pointer text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <>
-                <FiSend className="mr-2" />
-                Send Message
-              </>
-            )}
-          </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full mt-5 flex justify-center items-center py-2 px-4 bg-dark_red hover:bg-dark_red/80 cursor-pointer text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              <FiSend className="mr-2" />
+              Send Message
+            </>
+          )}
+        </button>
       </form>
     </div>
   );
 };
 
-export default DashboardMessageToUser;
+export default React.memo(DashboardMessageToUser);

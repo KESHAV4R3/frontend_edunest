@@ -2,14 +2,18 @@ import React, { useEffect, useState } from "react";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { FiUsers, FiDollarSign, FiBook } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const Earnings = () => {
   const [earnings, setEarnings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.ui);
 
   useEffect(() => {
     const getEarningData = async () => {
+      dispatch(setLoading(true));
       try {
         const response = await apiConnector("get", apiLinks.getAllEarnings);
         setEarnings(response.earnings || []);
@@ -24,11 +28,11 @@ const Earnings = () => {
       } catch (error) {
         console.error("Error fetching earnings data:", error);
       } finally {
-        setLoading(false);
+        dispatch(setLoading(false));
       }
     };
     getEarningData();
-  }, []);
+  }, [dispatch]);
 
   if (loading) {
     return (
@@ -122,4 +126,4 @@ const Earnings = () => {
   );
 };
 
-export default Earnings;
+export default React.memo(Earnings);

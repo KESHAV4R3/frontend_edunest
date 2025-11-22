@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import CourseCard from "../../components/dashBoardpage/CourseCard";
@@ -77,4 +77,4 @@ const DashboardPageCourses = () => {
   );
 };
 
-export default DashboardPageCourses;
+export default React.memo(DashboardPageCourses);

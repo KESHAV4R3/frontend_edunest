@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { IoSend } from "react-icons/io5";
 import { toast } from "react-toastify";
 import { apiConnector } from "../../services/apiConnector";
@@ -10,13 +10,17 @@ import { MdDelete } from "react-icons/md";
 import { IoMdAdd } from "react-icons/io";
 import { MdCancel } from "react-icons/md";
 import { MdOutlineSystemSecurityUpdateGood } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const DashboardInstructorCreateNewSection = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const id = location.pathname.split("/").pop();
   const [sections, setSections] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loading } = useSelector((state) => state.ui);
+
   const [newSection, setNewSection] = useState({
     courseId: id,
     name: "",
@@ -31,23 +35,21 @@ const DashboardInstructorCreateNewSection = () => {
     name: "",
     description: "",
   });
-  const [saveEditLoading, setSaveEditLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // handle update change
-  function updatedSectionHandler(event) {
+  const updatedSectionHandler = useCallback((event) => {
     setUpdatedSection((prevData) => {
       return { ...prevData, [event.target.name]: event.target.value };
     });
-  }
+  }, []);
 
   // to fetch all section data if reloaded
   useEffect(() => {
     async function callSections() {
+      dispatch(setLoading(true));
       try {
         const url = apiLinks.getAllSection + `/${id}`;
         const response = await apiConnector("GET", url);
-        console.log(response);
         if (!response.success) {
           toast.error("Unable to fetch previous sections", {
             autoClose: 900,
@@ -62,16 +64,18 @@ const DashboardInstructorCreateNewSection = () => {
         console.error("Error fetching sections:", error);
         toast.error("Failed to fetch sections");
         setSections([]);
+      } finally {
+        dispatch(setLoading(false));
       }
     }
     callSections();
-  }, [id]); // Added id to dependency array
+  }, [id, dispatch]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((event) => {
     setNewSection((prevData) => {
       return { ...prevData, [event.target.name]: event.target.value };
     });
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,7 +90,7 @@ const DashboardInstructorCreateNewSection = () => {
     }
 
     try {
-      setIsSubmitting(true);
+      dispatch(setLoading(true));
       // API call to create the section
       const response = await apiConnector(
         "POST",
@@ -127,26 +131,26 @@ const DashboardInstructorCreateNewSection = () => {
       });
     } finally {
       setNewSection({ courseId: id, name: "", description: "" });
-      setIsSubmitting(false);
+      dispatch(setLoading(false));
     }
   };
 
-  function cancelEdit(sectionId) {
+  const cancelEdit = useCallback((sectionId) => {
     setEditingSectionId(null);
     setUpdatedSection({ sectionId: "", name: "", description: "" });
-  }
+  }, []);
 
-  function startEditing(section) {
+  const startEditing = useCallback((section) => {
     setEditingSectionId(section._id);
     setUpdatedSection({
       sectionId: section._id,
       name: section.name,
       description: section.description,
     });
-  }
+  }, []);
 
   async function deleteSection(section) {
-    setDeleteLoading(true);
+    dispatch(setLoading(true));
     try {
       const courseId = id;
       const sectionId = section._id;
@@ -173,12 +177,12 @@ const DashboardInstructorCreateNewSection = () => {
       });
     } catch (error) {
     } finally {
-      setDeleteLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
   async function updateSectionAPICall(event) {
-    setSaveEditLoading(true);
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector(
         "PATCH",
@@ -212,7 +216,7 @@ const DashboardInstructorCreateNewSection = () => {
     } catch (error) {
     } finally {
       setEditingSectionId(null);
-      setSaveEditLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
@@ -293,7 +297,7 @@ const DashboardInstructorCreateNewSection = () => {
                       <button
                         onClick={updateSectionAPICall}
                         type="button"
-                        disabled={saveEditLoading}
+                        disabled={loading}
                         className="flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md disabled:cursor-not-allowed bg-pink-900/10 text-pink-400 hover:bg-pink-800/50 hover:text-pink-300 transition-all flex items-center justify-center min-w-[120px]"
                       >
                         <MdOutlineSystemSecurityUpdateGood />
@@ -305,11 +309,10 @@ const DashboardInstructorCreateNewSection = () => {
                       onClick={() => startEditing(section)}
                       type="button"
                       disabled={editingSectionId !== null}
-                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 hover:text-blue-300 transition-all flex items-center justify-center min-w-[120px] ${
-                        editingSectionId !== null
+                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 hover:text-blue-300 transition-all flex items-center justify-center min-w-[120px] ${editingSectionId !== null
                           ? "opacity-50 cursor-not-allowed"
                           : ""
-                      }`}
+                        }`}
                     >
                       <FaRegEdit />
                       <span className="whitespace-nowrap">Edit</span>
@@ -317,13 +320,12 @@ const DashboardInstructorCreateNewSection = () => {
 
                     <button
                       type="button"
-                      disabled={editingSectionId !== null || deleteLoading}
+                      disabled={editingSectionId !== null || loading}
                       onClick={() => deleteSection(section)}
-                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 hover:text-red-300 transition-all flex items-center justify-center min-w-[120px] ${
-                        editingSectionId !== null
+                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 hover:text-red-300 transition-all flex items-center justify-center min-w-[120px] ${editingSectionId !== null
                           ? "opacity-50 cursor-not-allowed"
                           : ""
-                      }`}
+                        }`}
                     >
                       <MdDelete />
                       <span className="whitespace-nowrap">Delete</span>
@@ -337,11 +339,10 @@ const DashboardInstructorCreateNewSection = () => {
                         )
                       }
                       disabled={editingSectionId !== null}
-                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-green-900/50 text-green-400 hover:bg-green-800/50 hover:text-green-300 transition-all flex items-center justify-center min-w-[120px] ${
-                        editingSectionId !== null
+                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-green-900/50 text-green-400 hover:bg-green-800/50 hover:text-green-300 transition-all flex items-center justify-center min-w-[120px] ${editingSectionId !== null
                           ? "opacity-50 cursor-not-allowed"
                           : ""
-                      }`}
+                        }`}
                     >
                       <IoMdAdd />
                       <span className="whitespace-nowrap">
@@ -378,7 +379,7 @@ const DashboardInstructorCreateNewSection = () => {
               onChange={handleInputChange}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
@@ -398,17 +399,17 @@ const DashboardInstructorCreateNewSection = () => {
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows="3"
               required
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
           <div className="pt-4 flex justify-end">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
               className="w-full sm:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isSubmitting ? (
+              {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
                   Submitting...
@@ -427,4 +428,4 @@ const DashboardInstructorCreateNewSection = () => {
   );
 };
 
-export default DashboardInstructorCreateNewSection;
+export default React.memo(DashboardInstructorCreateNewSection);

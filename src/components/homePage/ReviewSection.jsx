@@ -1,6 +1,6 @@
 import { apiLinks } from "../../services/apiLink";
 import { apiConnector } from "../../services/apiConnector";
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Rating } from "@material-tailwind/react";
 
 const ReviewSection = () => {
@@ -180,4 +180,4 @@ const ReviewSection = () => {
   );
 };
 
-export default ReviewSection;
+export default React.memo(ReviewSection);

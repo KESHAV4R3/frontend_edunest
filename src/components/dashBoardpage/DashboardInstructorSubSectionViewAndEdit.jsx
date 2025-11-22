@@ -6,4 +6,4 @@ const DashboardInstructorSubSectionViewAndEdit = () => {
   )
 }
 
-export default DashboardInstructorSubSectionViewAndEdit
+export default React.memo(DashboardInstructorSubSectionViewAndEdit)

@@ -1,23 +1,24 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setCatagory } from "../../redux/slices/applicationSlice";
 import { GrCatalog } from "react-icons/gr";
+import { setLoading } from "../../redux/slices/uiSlice";
 
 const DashboardPageAddcatagory = () => {
   const dispatch = useDispatch();
   const [displayCatagory, setDisplayCatagory] = useState("");
-  const [loading, setLoading] = useState(false);
-  function catagoryUpdateHandler(event) {
+  const { loading } = useSelector((state) => state.ui);
+
+  const catagoryUpdateHandler = useCallback((event) => {
     setDisplayCatagory(event.target.value);
-  }
+  }, []);
 
   async function addcatagoryBackendCall(event) {
-    setLoading(true);
     event.preventDefault();
+    dispatch(setLoading(true));
     try {
       const response = await apiConnector(
         "POST",
@@ -47,7 +48,7 @@ const DashboardPageAddcatagory = () => {
       }
     } catch (error) {
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
   }
 
@@ -86,4 +87,4 @@ const DashboardPageAddcatagory = () => {
   );
 };
 
-export default DashboardPageAddcatagory;
+export default React.memo(DashboardPageAddcatagory);

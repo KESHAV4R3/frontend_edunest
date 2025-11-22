@@ -1,0 +1,1 @@
+.blinking-cursor{animation:blink 1s step-end infinite}@keyframes blink{0%,to{opacity:1}50%{opacity:0}}.custom-scrollbar::-webkit-scrollbar{width:4px}.custom-scrollbar::-webkit-scrollbar-track{background:#4ade801a}.custom-scrollbar::-webkit-scrollbar-thumb{background:#4ade804d;border-radius:2px}
