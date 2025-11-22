@@ -36,6 +36,75 @@ const MemoizedParagraph1 = React.memo(Paragraph_1);
 const MemoizedParagraph2 = React.memo(Paragraph_2);
 const MemoizedButton = React.memo(Button);
 
+// Animation variants moved outside
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut",
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 20,
+      duration: 0.5,
+    },
+  },
+  hover: {
+    scale: 1.03,
+    y: -5,
+    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+    transition: {
+      duration: 0.3,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.3,
+      ease: "easeIn",
+    },
+  },
+};
+
+const videoVariants = {
+  hidden: { opacity: 0, scale: 0.95, rotateY: -10 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotateY: 0,
+    transition: {
+      delay: 0.4,
+      type: "spring",
+      stiffness: 100,
+      damping: 10,
+    },
+  },
+};
+
 const HeroSection = () => {
   const navigate = useNavigate();
   const [currentCategory, setCurrentCategory] = useState(dataList[0]);
@@ -43,87 +112,6 @@ const HeroSection = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const videoRef = useRef(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-
-  // Animation variants
-  const containerVariants = useMemo(
-    () => ({
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          staggerChildren: 0.1,
-        },
-      },
-    }),
-    []
-  );
-
-  const itemVariants = useMemo(
-    () => ({
-      hidden: { y: 20, opacity: 0 },
-      visible: {
-        y: 0,
-        opacity: 1,
-        transition: {
-          duration: 0.5,
-          ease: "easeOut",
-        },
-      },
-    }),
-    []
-  );
-
-  const cardVariants = useMemo(
-    () => ({
-      hidden: { opacity: 0, y: 20, scale: 0.95 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: {
-          type: "spring",
-          stiffness: 300,
-          damping: 20,
-          duration: 0.5,
-        },
-      },
-      hover: {
-        scale: 1.03,
-        y: -5,
-        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
-        transition: {
-          duration: 0.3,
-        },
-      },
-      exit: {
-        opacity: 0,
-        y: -20,
-        transition: {
-          duration: 0.3,
-          ease: "easeIn",
-        },
-      },
-    }),
-    []
-  );
-
-  const videoVariants = useMemo(
-    () => ({
-      hidden: { opacity: 0, scale: 0.95, rotateY: -10 },
-      visible: {
-        opacity: 1,
-        scale: 1,
-        rotateY: 0,
-        transition: {
-          delay: 0.4,
-          type: "spring",
-          stiffness: 100,
-          damping: 10,
-        },
-      },
-    }),
-    []
-  );
 
   // Intersection Observer hooks
   const [section1Ref, section1InView] = useInView({
@@ -191,10 +179,9 @@ const HeroSection = () => {
         <motion.button
           key={index}
           className={`m-auto text-[18px] w-[140px] tablet:w-[160px] h-[35px] tablet:h-[50px] font-[600] text-center text-white cursor-pointer rounded-lg flex justify-center items-center 
-            ${
-              value === currentCategory
-                ? "bg-gray-800 shadow-lg"
-                : "hover:bg-gray-700"
+            ${value === currentCategory
+              ? "bg-gray-800 shadow-lg"
+              : "hover:bg-gray-700"
             }`}
           onClick={() => updateDataCategory(index)}
           whileHover={{
@@ -256,7 +243,7 @@ const HeroSection = () => {
         </AnimatePresence>
       </div>
     ),
-    [currentData, currentCategory, cardVariants]
+    [currentData, currentCategory]
   );
 
   return (

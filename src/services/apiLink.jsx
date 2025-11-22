@@ -1,4 +1,4 @@
-const baseUrl = "https://backend-edunest.onrender.com/EDUNEST/api/v1";
+const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
 // to get reset password token
 const currentUrl = window.location.href;

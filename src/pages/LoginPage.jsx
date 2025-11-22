@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { IoMdLogIn } from "react-icons/io";
 import { apiConnector } from "../services/apiConnector";
@@ -43,77 +43,74 @@ const LoginPage = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const updateRole = useCallback(
-    (index) => {
-      setCurrentRole(roles[index]);
-      setBodyData((prev) => ({ ...prev, accountType: roles[index].role }));
-    },
-    [roles]
-  );
+  const updateRole = (index) => {
+    setCurrentRole(roles[index]);
+    setBodyData((prev) => ({ ...prev, accountType: roles[index].role }));
+  };
 
-  const updateUserData = useCallback((event) => {
+  const updateUserData = (event) => {
     setBodyData((prev) => ({
       ...prev,
       [event.target.name]: event.target.value,
     }));
-  }, []);
+  };
 
-  const togglePasswordVisibility = useCallback((e) => {
+  const togglePasswordVisibility = (e) => {
     e.preventDefault();
     setIsPasswordVisible((prev) => !prev);
-  }, []);
+  };
 
-  const forgotPassword = useCallback(() => {
+  const forgotPassword = () => {
     localStorage.setItem("forgotPassword", "true");
     navigate("/forgot-password");
-  }, [navigate]);
+  };
 
-  const handleSubmit = useCallback(
-    async (event) => {
-      event.preventDefault();
-      try {
-        if (bodyData.email && bodyData.password) {
-          setLoading(true);
-          const response = await apiConnector(
-            "POST",
-            apiLinks.login,
-            null,
-            bodyData
-          );
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      if (bodyData.email && bodyData.password) {
+        setLoading(true);
+        console.log("Logging in with:", bodyData);
+        const response = await apiConnector(
+          "POST",
+          apiLinks.login,
+          null,
+          bodyData
+        );
 
-          if (!response.success) {
-            toast.warn(response.message, {
-              autoClose: 900,
-              hideProgressBar: true,
-            });
-            setBodyData({
-              email: "",
-              password: "",
-              accountType: currentRole.role,
-            });
-          } else {
+        console.log("Login response:", response);
+
+        if (!response?.success) {
+          toast.warn(response?.message || "Login failed", {
+            autoClose: 900,
+            hideProgressBar: true,
+          });
+        } else {
+          if (response.user) {
             dispatch(setProfile(response.user));
             toast.success("Login Successful", {
               autoClose: 900,
               hideProgressBar: true,
             });
             navigate("/");
+          } else {
+            toast.error("Login successful but user data missing");
           }
-        } else {
-          toast.error("Please fill in all fields.");
         }
-      } catch {
-        toast.error("Something went wrong. Please try again.");
-      } finally {
-        setLoading(false);
+      } else {
+        toast.error("Please fill in all fields.");
       }
-    },
-    [bodyData, currentRole.role, dispatch, navigate]
-  );
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const navigateToRegister = useCallback(() => {
+  const navigateToRegister = () => {
     navigate("/register");
-  }, [navigate]);
+  };
 
   return (
     <div className="w-[95%] max-w-[1100px] mx-auto mt-10 mb-10">
@@ -143,22 +140,20 @@ const LoginPage = () => {
           <div className="flex items-center justify-center md:justify-start mt-5">
             <div className="relative flex items-center bg-gray-800 w-[240px] md:w-[300px] h-[43px] rounded-full p-1">
               <div
-                className={`absolute z-[1] w-1/3 h-[90%] bg-dark_red rounded-full transition-all duration-300 ${
-                  currentRole.role === "Admin"
+                className={`absolute z-[1] w-1/3 h-[90%] bg-dark_red rounded-full transition-all duration-300 ${currentRole.role === "Admin"
                     ? "left-1"
                     : currentRole.role === "Student"
-                    ? "left-[33%]"
-                    : "left-[66%]"
-                }`}
+                      ? "left-[33%]"
+                      : "left-[66%]"
+                  }`}
               ></div>
               {roles.map((role, index) => (
                 <div
                   key={role.role}
-                  className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${
-                    currentRole.role === role.role
+                  className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${currentRole.role === role.role
                       ? "text-white font-bold"
                       : "text-gray-400"
-                  }`}
+                    }`}
                   onClick={() => updateRole(index)}
                 >
                   {role.role}
@@ -243,13 +238,10 @@ const LoginPage = () => {
                 Register now
               </span>
             </p>
-            <div
-              onClick={() => {
-                localStorage.setItem("role", currentRole.role);
-              }}
-            >
+            <div>
               <GoogleLoginButton
                 onSuccessLogin={(user) => {
+                  localStorage.setItem("role", currentRole.role);
                   dispatch(setProfile(user));
                   navigate("/");
                 }}
@@ -262,4 +254,4 @@ const LoginPage = () => {
   );
 };
 
-export default React.memo(LoginPage);
+export default LoginPage;
