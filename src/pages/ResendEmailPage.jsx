@@ -22,7 +22,9 @@ const ResendEmailPage = () => {
       const response = await apiConnector(
         "POST",
         apiLinks.resetPassword,
-        null,
+        {
+          "Content-Type": "application/json",
+        },
         {
           email,
         }
@@ -49,7 +51,7 @@ const ResendEmailPage = () => {
         setLoading(false);
         return;
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   return (
@@ -64,9 +66,8 @@ const ResendEmailPage = () => {
           )}
           <img
             src="https://res.cloudinary.com/dort5nnis/image/upload/v1742005348/erasebg-transformed_5_cvbpkc.png"
-            className={`rounded-2xl w-[90%] max-w-[400px] h-auto object-contain transition-opacity duration-500 ${
-              imageLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            className={`rounded-2xl w-[90%] max-w-[400px] h-auto object-contain transition-opacity duration-500 ${imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
             alt="Secure Login"
             onLoad={() => setImageLoaded(true)}
             style={{ display: imageLoaded ? "block" : "none" }}

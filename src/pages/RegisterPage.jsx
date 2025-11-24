@@ -77,20 +77,33 @@ const RegisterPage = () => {
   // function to send otp to the email via server
   async function sendOtp(email) {
     try {
-      const response = await apiConnector("POST", apiLinks.sendOtp, null, {
-        email,
-      });
+      const response = await apiConnector(
+        "POST",
+        apiLinks.sendOtp,
+        {
+          "Content-Type": "application/json",
+        },
+        {
+          email,
+        }
+      );
       return response;
-    } catch (error) {}
+    } catch (error) { }
   }
 
   // function send otp to owner
   async function sendOtpOwner() {
     try {
-      const response = await apiConnector("POST", apiLinks.sendOtp_owner);
+      const response = await apiConnector(
+        "POST",
+        apiLinks.sendOtp_owner,
+        {
+          "Content-Type": "application/json",
+        }
+      );
       alert(response.message);
       return response;
-    } catch (error) {}
+    } catch (error) { }
   }
 
   // Handle form submission
@@ -181,9 +194,8 @@ const RegisterPage = () => {
           )}
           <img
             src="https://res.cloudinary.com/dort5nnis/image/upload/v1741922098/erasebg-transformed_4_sufn8y.png"
-            className={`rounded-2xl w-[90%] max-w-[400px] h-auto object-contain transition-opacity duration-500 ${
-              isImageLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            className={`rounded-2xl w-[90%] max-w-[400px] h-auto object-contain transition-opacity duration-500 ${isImageLoaded ? "opacity-100" : "opacity-0"
+              }`}
             alt="Secure Login"
             onLoad={() => setIsImageLoaded(true)}
             loading="lazy"
@@ -209,41 +221,37 @@ const RegisterPage = () => {
           <div className="flex items-center justify-center md:justify-start mt-5">
             <div className="relative flex items-center bg-gray-800 w-[240px] md:w-[300px] h-[43px] rounded-full p-1">
               <div
-                className={`absolute z-[1] w-1/3 h-[90%] bg-dark_red rounded-full transition-all duration-300 ${
-                  currentRole.role === "Admin"
+                className={`absolute z-[1] w-1/3 h-[90%] bg-dark_red rounded-full transition-all duration-300 ${currentRole.role === "Admin"
                     ? "left-1"
                     : currentRole.role === "Student"
-                    ? "left-[33%]"
-                    : "left-[66%]"
-                }`}
+                      ? "left-[33%]"
+                      : "left-[66%]"
+                  }`}
               ></div>
 
               <div
-                className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${
-                  currentRole.role === "Admin"
+                className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${currentRole.role === "Admin"
                     ? "text-white font-bold"
                     : "text-gray-400"
-                }`}
+                  }`}
                 onClick={() => updateRole(2)}
               >
                 Admin
               </div>
               <div
-                className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${
-                  currentRole.role === "Student"
+                className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${currentRole.role === "Student"
                     ? "text-white font-bold"
                     : "text-gray-400"
-                }`}
+                  }`}
                 onClick={() => updateRole(0)}
               >
                 Student
               </div>
               <div
-                className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${
-                  currentRole.role === "Instructor"
+                className={`w-1/3 text-center cursor-pointer z-[1] text-sm md:text-base ${currentRole.role === "Instructor"
                     ? "text-white font-bold"
                     : "text-gray-400"
-                }`}
+                  }`}
                 onClick={() => updateRole(1)}
               >
                 Instructor

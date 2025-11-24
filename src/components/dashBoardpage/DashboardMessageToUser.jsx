@@ -33,7 +33,9 @@ const DashboardMessageToUser = () => {
       const response = await apiConnector(
         "POST",
         apiLinks.sendmailToUser,
-        null,
+        {
+          "Content-Type": "application/json",
+        },
         {
           name: data.name,
           email: data.email,

@@ -34,7 +34,9 @@ const ContactForm = () => {
       const response = await apiConnector(
         "POST",
         apiLinks.sendmailToAdmin,
-        null,
+        {
+          "Content-Type": "application/json",
+        },
         {
           firstName: data.firstname,
           lastName: data.lastname,

@@ -29,7 +29,9 @@ const ForgotPasswordPage = () => {
       const response = await apiConnector(
         "POST",
         apiLinks.resetPassword,
-        null,
+        {
+          "Content-Type": "application/json",
+        },
         {
           email,
         }
@@ -51,7 +53,7 @@ const ForgotPasswordPage = () => {
         setLoading(false);
         return;
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   return (
@@ -66,9 +68,8 @@ const ForgotPasswordPage = () => {
           )}
           <img
             src="https://res.cloudinary.com/dort5nnis/image/upload/v1741957025/erasebg-transformed_1_yk1jir.png"
-            className={`rounded-2xl w-[90%] max-w-[400px] h-auto object-contain transition-opacity duration-500 ${
-              imageLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            className={`rounded-2xl w-[90%] max-w-[400px] h-auto object-contain transition-opacity duration-500 ${imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
             alt="Secure Login"
             onLoad={() => setImageLoaded(true)}
             style={{ display: imageLoaded ? "block" : "none" }} // Hide image until loaded
