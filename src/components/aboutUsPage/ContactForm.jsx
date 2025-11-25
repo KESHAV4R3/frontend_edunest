@@ -44,6 +44,7 @@ const ContactForm = () => {
           message: data.message,
         }
       );
+      console.log(response);
 
       if (!response.success) {
         toast.error("Unable to send message", {
