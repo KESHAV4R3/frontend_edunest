@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading } from "../../redux/slices/uiSlice";
 
-const DashboardMessageToUser = () => {
+const DashboardMessageToUser = ({setShowMessageModal}) => {
   const [data, setData] = useState({ name: "", email: "" });
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -74,7 +74,7 @@ const DashboardMessageToUser = () => {
     <div className="relative mt-20 rounded-lg p-6 bg-gray-800 w-full max-w-2xl mx-auto shadow-lg border border-gray-700">
       <div
         onClick={() => {
-          navigate(-1);
+          setShowMessageModal(false)
         }}
         className="absolute top-3 right-3 hover:scale-110 cursor-pointer bg-gray-700 rounded-full w-[30px] h-[30px] flex justify-center items-center"
       >

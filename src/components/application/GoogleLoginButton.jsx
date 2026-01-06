@@ -13,6 +13,7 @@ const GoogleLoginButton = ({ onSuccessLogin }) => {
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       dispatch(setLoading(true));
+      console.log('role',localStorage.getItem("role"))
       try {
         const response = await apiConnector(
           "POST",
@@ -23,6 +24,7 @@ const GoogleLoginButton = ({ onSuccessLogin }) => {
             accountType: localStorage.getItem("role"),
           }
         );
+        console.log('google response',response)
 
         if (!response.success) {
           toast.error(response.message || "Google login failed");

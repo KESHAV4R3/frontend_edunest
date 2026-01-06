@@ -1,308 +1,175 @@
 import React, { useCallback, useState, memo } from "react";
-import { FaStar, FaEdit, FaLocationArrow } from "react-icons/fa";
+import { FaStar, FaEdit, FaLocationArrow, FaGlobe } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { BiSolidPurchaseTag } from "react-icons/bi";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { apiLinks } from "../../services/apiLink";
 import { apiConnector } from "../../services/apiConnector";
 import { toast } from "react-toastify";
 import { setPaymentLoading } from "../../redux/slices/profileSlice";
 import { buyCourse } from "../../services/razorPayIntegration";
-import { useDispatch } from "react-redux";
 import { setCartCourses } from "../../redux/slices/applicationSlice";
 
 const CourseCard = memo(({ course, id }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.profile.user);
-  const accountType = user ? user.accountType : "";
-  const paymentPageLoader = useSelector(
-    (state) => state.profile.paymentLoading
-  );
-  const cartCourses = useSelector((state) => state.application.cartCourses);
   
-  // State management
+  const user = useSelector((state) => state.profile.user);
+  const accountType = user?.accountType || "";
+  const paymentPageLoader = useSelector((state) => state.profile.paymentLoading);
+  const cartCourses = useSelector((state) => state.application.cartCourses) || [];
+  
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [purchaseLoading, setPurchaseLoading] = useState(false);
-  const [cartRemoveLoading, setCartRemoveLoading] = useState(false);
   const [purchaseButtonLoading, setPurchaseButtonLoading] = useState(false);
   
-  // Memoize course details to prevent unnecessary re-renders
   const { name, description, language, price, thumbnail, averageRating } = course;
 
-  // Memoized navigation handlers
   const navigateCourse = useCallback(() => {
     navigate(`/course-detail/${id}`);
   }, [navigate, id]);
 
   const handleSubmit = useCallback(() => {
-    if (
-      location.pathname.includes("category") ||
-      location.pathname.includes("cart") ||
-      location.pathname.includes("search")
-    ) {
+    const path = location.pathname;
+    if (path.includes("category") || path.includes("cart") || path.includes("search")) {
       navigate(`/course-detail/${id}`);
-    } else if (
-      accountType === "Instructor" &&
-      location.pathname.includes("dashboard")
-    ) {
+    } else if (accountType === "Instructor" && path.includes("dashboard")) {
       navigate(`/dashboard/create-new-section/${id}`);
-    } else if (
-      accountType === "Admin" &&
-      location.pathname.includes("dashboard")
-    ) {
+    } else if (accountType === "Admin" && path.includes("dashboard")) {
       navigate(`/course-detail/${id}`);
-    } else if (
-      accountType === "Student" &&
-      location.pathname.includes("dashboard")
-    ) {
+    } else if (accountType === "Student" && path.includes("dashboard")) {
       navigate(`/view-course/${id}`);
     }
   }, [location.pathname, accountType, navigate, id]);
 
-  // Memoized delete course function
-  const deleteCourse = useCallback(async () => {
-    // to remove the course from cart
-    if (location.pathname.split("/").at(-1) === "cart") {
-      setCartRemoveLoading(true);
-      try {
-        const url = apiLinks.removeCourseFromCart + `/${id}`;
-        const response = await apiConnector("PATCH", url);
-        if (!response.success) {
-          toast.error("Failed to remove course from cart", {
-            autoClose: 900,
-            hideProgressBar: true,
-            pauseOnHover: false,
-            closeOnClick: true,
-            draggable: false,
-          });
-          return;
-        }
-        // Update cart in Redux store
-        const updatedCart = cartCourses.filter((value) => value._id !== id);
-        dispatch(setCartCourses(updatedCart));
-        toast.success("Course removed from cart", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-      } catch (error) {
-        toast.error("Error removing course from cart", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-      } finally {
-        setCartRemoveLoading(false);
-      }
-      return;
-    }
-    // to delete the course only for admin
+  // --- UPDATED DELETE LOGIC WITH CONFIRMATION ---
+  const deleteCourse = useCallback(async (e) => {
+    e.stopPropagation(); 
+    const isCart = location.pathname.includes("cart");
+
+    // 1. Ask for confirmation first
+    const confirmMessage = isCart 
+      ? "Remove this course from your cart?" 
+      : "Are you sure? This will permanently delete the course.";
+    
+    if (!window.confirm(confirmMessage)) return;
+
     setDeleteLoading(true);
     try {
-      const url = `${apiLinks.deleteCourse}/${id}`;
-      const response = await apiConnector("DELETE", url);
-      if (!response.success) {
-        toast.error("Unable to delete course", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
+      const url = isCart ? `${apiLinks.removeCourseFromCart}/${id}` : `${apiLinks.deleteCourse}/${id}`;
+      const method = isCart ? "PATCH" : "DELETE";
+      const response = await apiConnector(method, url);
+
+      if (response.success) {
+        if (isCart) {
+          dispatch(setCartCourses(cartCourses.filter(c => c._id !== id)));
+        }
+        toast.success(isCart ? "Removed from cart" : "Course deleted successfully");
+        if (!isCart) window.location.reload();
       } else {
-        toast.success("Course deleted successfully", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
+        toast.error(response.message || "Failed to process request");
       }
     } catch (error) {
-      toast.error("Error deleting course", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
+      console.error("Delete Error:", error);
+      toast.error("An error occurred");
     } finally {
       setDeleteLoading(false);
-      window.location.reload();
     }
   }, [id, location.pathname, cartCourses, dispatch]);
 
-  // Memoized purchase course function
-  const purchaseCourse = useCallback(async () => {
+  const purchaseCourse = useCallback(async (e) => {
+    e.stopPropagation();
     setPurchaseButtonLoading(true);
     if (!user) {
-      toast.info("Login to purchase the course", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
+      toast.info("Please login to purchase");
       navigate("/login");
-      setPurchaseButtonLoading(false);
       return;
     }
 
     try {
       await buyCourse([id], user, navigate, async (isLoading) => {
         dispatch(setPaymentLoading(isLoading));
-        if (!isLoading) {
-          // Only remove from cart after successful purchase
-          try {
-            await deleteCourse();
-          } catch (error) {
-            console.error("Error removing from cart after purchase:", error);
-          }
-        }
       });
     } catch (error) {
-      console.error("Purchase failed:", error);
       dispatch(setPaymentLoading(false));
     } finally {
       setPurchaseButtonLoading(false);
     }
-  }, [id, user, navigate, dispatch, deleteCourse]);
+  }, [id, user, navigate, dispatch]);
 
-  if (paymentPageLoader) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0000004f] bg-opacity-70">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-white">Completing your purchase...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Determine button content based on context
-  const renderButtonContent = useCallback(() => {
-    if (purchaseButtonLoading) {
-      return (
-        <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-      );
-    }
-    
-    if (location.pathname.includes("category")) {
-      return (
-        <span className="flex justify-center items-center gap-1 cursor-pointer">
-          <FaLocationArrow className="mr-2" />
-          Explore
-        </span>
-      );
-    }
-    
-    if (accountType === "Instructor") {
-      return (
-        <span className="flex justify-center items-center gap-1 cursor-pointer">
-          <FaEdit className="mr-2" />
-          Edit
-        </span>
-      );
-    }
-    
-    if (location.pathname.includes("cart")) {
-      return (
-        <span className="flex justify-center items-center gap-1 cursor-pointer">
-          <BiSolidPurchaseTag className="mr-2" />
-          Purchase
-        </span>
-      );
-    }
-    
-    return (
-      <span className="flex justify-center items-center gap-1 cursor-pointer">
-        <FaLocationArrow className="mr-2" />
-        Explore
-      </span>
-    );
-  }, [purchaseButtonLoading, location.pathname, accountType]);
+  if (paymentPageLoader) return null;
 
   return (
-    <div className="relative bg-gray-800 min-w-[340px] p-5 rounded-md w-[97%] h-[650px] md:h-[655px] max-w-[500px] cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/50 hover:translate-y-[-5px]">
-      {/* Delete Button for Admin or Cart */}
-      {(user?.accountType === "Admin" ||
-        location.pathname.split("/").at(-1) === "cart") && (
+    <div 
+      onClick={navigateCourse}
+      className="group relative bg-gray-800 border border-gray-700 rounded-xl w-[330px] h-[340px] overflow-hidden transition-all duration-300 hover:border-red-600/50 hover:shadow-xl hover:shadow-black/40 cursor-pointer"
+    >
+      {/* Delete Button */}
+      {(accountType === "Admin" || location.pathname.includes("cart")) && (
         <button
-          disabled={deleteLoading || cartRemoveLoading}
+          disabled={deleteLoading}
           onClick={deleteCourse}
-          className="absolute cursor-pointer disabled:cursor-not-allowed z-10 top-2 right-2 w-[40px] h-[40px] border border-gray-600 bg-red-700 rounded-full flex justify-center items-center transition-opacity hover:opacity-90"
-          aria-label="Delete course"
+          className="absolute top-2 right-2 z-10 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {deleteLoading || cartRemoveLoading ? (
-            <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+          {deleteLoading ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <MdDelete className="text-[25px] transition-transform hover:scale-110" />
+            <MdDelete size={18} />
           )}
         </button>
       )}
 
-      {/* Course Thumbnail */}
-      <div className="mb-3 rounded-md w-full h-[200px] overflow-hidden bg-gray-700">
+      {/* Thumbnail Area */}
+      <div className="relative h-40 w-full overflow-hidden bg-gray-900 border-b border-gray-700">
         <img
-          onClick={navigateCourse}
           src={thumbnail}
           alt={name}
           loading="lazy"
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white flex items-center gap-1 border border-white/10">
+          <FaStar className="text-yellow-500" /> {averageRating.toFixed(1)}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h3 
-          onClick={navigateCourse}
-          className="text-gray-200 h-[70px] text-[16px] tablet:text-[18px] bg-gray-700 p-3 rounded-md transition-colors duration-200 line-clamp-2"
-        >
-          {name}
-        </h3>
-        
-        <p 
-          onClick={navigateCourse}
-          className="text-[15px] bg-gray-700 p-3 min-h-[200px] rounded-md transition-colors duration-200 line-clamp-6 text-gray-300"
-        >
-          {description.substring(0, 350)}...
-        </p>
-
-        <div className="flex justify-between gap-3">
-          <span className="bg-gray-700 p-3 flex justify-center items-center gap-3 rounded-md w-[48%] hover:bg-gray-600 transition-colors duration-200">
-            {language}
-          </span>
-          <span className="bg-gray-700 p-3 flex justify-center items-center gap-3 rounded-md w-[48%] hover:bg-gray-600 transition-colors duration-200">
-            <FaStar className="text-yellow-500" />
-            {averageRating.toFixed(1)}
-          </span>
+      {/* Info Content Area */}
+      <div className="p-4 flex flex-col justify-between h-[180px]">
+        <div>
+          <h3 className="text-gray-100 font-bold text-sm line-clamp-1 group-hover:text-red-500 transition-colors uppercase">
+            {name}
+          </h3>
+          <p className="text-gray-400 text-xs mt-1 line-clamp-2 leading-relaxed">
+            {description}
+          </p>
         </div>
 
-        <div className="flex justify-between gap-3 mt-1">
-          <span className="bg-gray-700 p-3 flex justify-center items-center gap-3 rounded-md w-[48%] hover:bg-gray-600 transition-colors duration-200">
-            ₹{price.toFixed(2)}
-          </span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="bg-gray-900 px-2 py-1 rounded border border-gray-700 text-[9px] text-gray-500 font-bold flex items-center gap-1 uppercase">
+              <FaGlobe size={10} /> {language}
+            </div>
+            <div className="text-red-600 font-bold text-base">
+              ₹{price.toLocaleString()}
+            </div>
+          </div>
 
           <button
-            type="button"
-            disabled={purchaseLoading || purchaseButtonLoading}
-            onClick={() => {
-              if (location.pathname.includes("cart")) {
-                purchaseCourse();
-              } else {
-                handleSubmit();
-              }
+            disabled={purchaseButtonLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              location.pathname.includes("cart") ? purchaseCourse(e) : handleSubmit();
             }}
-            className="w-[48%] flex justify-center items-center py-3 px-4 bg-green-600 hover:bg-green-600/90 text-white font-medium rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:shadow-green-600/30"
-            aria-label={location.pathname.includes("cart") ? "Purchase course" : "View course"}
+            className="w-full py-2 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
           >
-            {renderButtonContent()}
+            {purchaseButtonLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                {location.pathname.includes("cart") ? <BiSolidPurchaseTag /> : accountType === "Instructor" ? <FaEdit /> : <FaLocationArrow />}
+                <span className="uppercase">{location.pathname.includes("cart") ? "Purchase" : accountType === "Instructor" ? "Edit" : "Explore"}</span>
+              </>
+            )}
           </button>
         </div>
       </div>

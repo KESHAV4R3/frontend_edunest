@@ -23,7 +23,8 @@ export async function buyCourse(
   courses,
   userdetail,
   navigate,
-  setLoadingCallback
+  setLoadingCallback,
+  onPaymentSuccess
 ) {
   try {
     const res = await loadScript(
@@ -82,17 +83,6 @@ export async function buyCourse(
             { ...response, courses }
           );
 
-          if (!verificationResponse.success) {
-            toast.error("Payment verification failed", {
-              autoClose: 900,
-              hideProgressBar: true,
-              pauseOnHover: false,
-              closeOnClick: true,
-              draggable: false,
-            });
-            setLoadingCallback(false);
-            return;
-          }
 
           toast.success("Payment successful! Course added to your basket", {
             autoClose: 900,
@@ -101,6 +91,11 @@ export async function buyCourse(
             closeOnClick: true,
             draggable: false,
           });
+
+          // Call success callback if provided
+          if (onPaymentSuccess) {
+            await onPaymentSuccess();
+          }
 
           // Keep loading visible during navigation delay
           setTimeout(() => {

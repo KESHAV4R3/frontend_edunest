@@ -1,15 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { IoSend } from "react-icons/io5";
 import { toast } from "react-toastify";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FaRegEdit } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdCancel, MdOutlineSystemSecurityUpdateGood } from "react-icons/md";
 import { IoMdAdd } from "react-icons/io";
-import { MdCancel } from "react-icons/md";
-import { MdOutlineSystemSecurityUpdateGood } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading } from "../../redux/slices/uiSlice";
 
@@ -17,9 +14,11 @@ const DashboardInstructorCreateNewSection = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const id = location.pathname.split("/").pop();
+
+  const id = useMemo(() => location.pathname.split("/").pop(), [location.pathname]);
+  
   const [sections, setSections] = useState([]);
-  const { loading } = useSelector((state) => state.ui);
+  const { loading } = useSelector((state) => state.ui) || { loading: false };
 
   const [newSection, setNewSection] = useState({
     courseId: id,
@@ -27,118 +26,65 @@ const DashboardInstructorCreateNewSection = () => {
     description: "",
   });
 
-  // Track which section is being edited (null means none)
   const [editingSectionId, setEditingSectionId] = useState(null);
-  // Store the updated values for the section being edited
   const [updatedSection, setUpdatedSection] = useState({
     sectionId: "",
     name: "",
     description: "",
   });
 
-  // handle update change
-  const updatedSectionHandler = useCallback((event) => {
-    setUpdatedSection((prevData) => {
-      return { ...prevData, [event.target.name]: event.target.value };
-    });
-  }, []);
+  // --- API LOGIC ---
 
-  // to fetch all section data if reloaded
-  useEffect(() => {
-    async function callSections() {
-      dispatch(setLoading(true));
-      try {
-        const url = apiLinks.getAllSection + `/${id}`;
-        const response = await apiConnector("GET", url);
-        if (!response.success) {
-          toast.error("Unable to fetch previous sections", {
-            autoClose: 900,
-            hideProgressBar: true,
-            pauseOnHover: false,
-            closeOnClick: true,
-            draggable: false,
-          });
-        }
+  const fetchSections = useCallback(async () => {
+    dispatch(setLoading(true));
+    try {
+      const response = await apiConnector("GET", `${apiLinks.getAllSection}/${id}`);
+      if (response?.success) {
         setSections(response.sections || []);
-      } catch (error) {
-        console.error("Error fetching sections:", error);
-        toast.error("Failed to fetch sections");
-        setSections([]);
-      } finally {
-        dispatch(setLoading(false));
       }
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      setSections([]);
+    } finally {
+      dispatch(setLoading(false));
     }
-    callSections();
   }, [id, dispatch]);
 
+  useEffect(() => {
+    fetchSections();
+  }, [fetchSections]);
+
   const handleInputChange = useCallback((event) => {
-    setNewSection((prevData) => {
-      return { ...prevData, [event.target.name]: event.target.value };
-    });
+    const { name, value } = event.target;
+    setNewSection((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const updatedSectionHandler = useCallback((event) => {
+    const { name, value } = event.target;
+    setUpdatedSection((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Check if all required fields are filled
     if (!newSection.name.trim() || !newSection.description.trim()) {
-      toast.error("Please fill in all fields", {
-        autoClose: 900,
-        hideProgressBar: true,
-      });
+      toast.error("Fields cannot be empty");
       return;
     }
 
+    dispatch(setLoading(true));
     try {
-      dispatch(setLoading(true));
-      // API call to create the section
-      const response = await apiConnector(
-        "POST",
-        apiLinks.createSection,
-        null,
-        newSection
-      );
-
-      // Check if response is successful and contains the newly created section
-      if (!response.success) {
-        toast.error("unable to create section", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        return;
+      const response = await apiConnector("POST", apiLinks.createSection, null, newSection);
+      if (response?.success) {
+        toast.success("Section deployed");
+        setNewSection({ courseId: id, name: "", description: "" });
+        fetchSections();
       }
-
-      setSections((prevSections) => [...prevSections, newSection]);
-
-      toast.success("Section created successfully", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
     } catch (error) {
-      console.error("API Error:", error);
-      toast.error("something went wrong", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
+      toast.error("Internal Error");
     } finally {
-      setNewSection({ courseId: id, name: "", description: "" });
       dispatch(setLoading(false));
     }
   };
-
-  const cancelEdit = useCallback((sectionId) => {
-    setEditingSectionId(null);
-    setUpdatedSection({ sectionId: "", name: "", description: "" });
-  }, []);
 
   const startEditing = useCallback((section) => {
     setEditingSectionId(section._id);
@@ -149,283 +95,172 @@ const DashboardInstructorCreateNewSection = () => {
     });
   }, []);
 
-  async function deleteSection(section) {
-    dispatch(setLoading(true));
-    try {
-      const courseId = id;
-      const sectionId = section._id;
-      const url = apiLinks.deleteSection + `/${id}?sectionId=${sectionId}`;
-      const response = await apiConnector("DELETE", url);
-      if (!response.success) {
-        toast.error("unable to delete section", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        return;
-      }
-      const newSectionData = sections.filter((s) => s._id !== sectionId);
-      setSections(newSectionData);
-      toast.success("section deleted successfully", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
-    } catch (error) {
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
+  const cancelEdit = useCallback(() => {
+    setEditingSectionId(null);
+    setUpdatedSection({ sectionId: "", name: "", description: "" });
+  }, []);
 
-  async function updateSectionAPICall(event) {
+  const updateSectionAPICall = async () => {
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector(
-        "PATCH",
-        apiLinks.updateSection,
-        null,
-        updatedSection
-      );
-      if (!response.success) {
-        toast.error("unable to update data", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        return;
+      const response = await apiConnector("PATCH", apiLinks.updateSection, null, updatedSection);
+      if (response?.success) {
+        toast.success("Updated");
+        await fetchSections();
+        cancelEdit();
       }
-      toast.success("updated successfully", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
-      });
-      sections.forEach((value) => {
-        if (value._id == updatedSection.sectionId) {
-          value.name = updatedSection.name || value.name;
-          value.description = updatedSection.description || value.description;
-        }
-      });
     } catch (error) {
+      toast.error("Update failed");
     } finally {
-      setEditingSectionId(null);
       dispatch(setLoading(false));
     }
-  }
+  };
+
+  const deleteSection = async (sectionId) => {
+    if (!window.confirm("Permanently remove this section?")) return;
+    dispatch(setLoading(true));
+    try {
+      const url = `${apiLinks.deleteSection}/${id}?sectionId=${sectionId}`;
+      const response = await apiConnector("DELETE", url);
+      if (response?.success) {
+        toast.success("Section purged");
+        setSections(prev => prev.filter(s => s._id !== sectionId));
+      }
+    } catch (error) {
+      toast.error("Deletion error");
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6 text-white">Course Sections</h1>
-
-      {/* Existing Sections */}
-      <div className="mb-8 w-full">
-        <h2 className="text-xl font-semibold mb-4 text-gray-300">
-          Existing Sections
-        </h2>
-        {sections.length === 0 ? (
-          <div className="p-6 border border-gray-700 rounded-lg text-center">
-            <p className="text-gray-400">No sections created yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4 p-6 w-full  bg-black rounded-md h-[500px] overflow-y-auto">
-            {sections.map((section) => (
-              <div
-                key={section._id}
-                className="w-full space-y-3 p-4 border border-gray-700 rounded-lg bg-gray-800"
-              >
-                <div className="w-full flex items-start justify-between">
-                  <div className="w-full">
-                    <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                      Section Name
-                    </p>
-                    {editingSectionId === section._id ? (
-                      <input
-                        type="text"
-                        name="name"
-                        value={updatedSection.name}
-                        onChange={updatedSectionHandler}
-                        className="w-[90%] mt-2  p-2 outline-none border-2 rounded-md border-gray-700"
-                      />
-                    ) : (
-                      <h3 className="text-xl font-bold text-white mt-1">
-                        {section.name}
-                      </h3>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                    Description
-                  </p>
-                  {editingSectionId === section._id ? (
-                    <textarea
-                      name="description"
-                      value={updatedSection.description}
-                      onChange={updatedSectionHandler}
-                      className="w-full mt-2 p-2 outline-none border-2 rounded-md border-gray-700"
-                    />
-                  ) : (
-                    <p className="text-gray-300 mt-1">
-                      {section.description || "No description provided"}
-                    </p>
-                  )}
-                </div>
-
-                <div className="pt-3 mt-3 border-t border-gray-700">
-                  {/* Flex container that changes direction based on screen size */}
-                  <div className="flex flex-row flex-wrap gap-2 sm:gap-3">
-                    {editingSectionId === section._id && (
-                      <button
-                        onClick={() => cancelEdit(section._id)}
-                        type="button"
-                        className="flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-orange-900/50 text-orange-400 hover:bg-orange-800/50 hover:text-orange-300 transition-all flex items-center justify-center min-w-[120px]"
-                      >
-                        <MdCancel />
-                        <span className="whitespace-nowrap">Cancel Edit</span>
-                      </button>
-                    )}
-
-                    {editingSectionId === section._id && (
-                      <button
-                        onClick={updateSectionAPICall}
-                        type="button"
-                        disabled={loading}
-                        className="flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md disabled:cursor-not-allowed bg-pink-900/10 text-pink-400 hover:bg-pink-800/50 hover:text-pink-300 transition-all flex items-center justify-center min-w-[120px]"
-                      >
-                        <MdOutlineSystemSecurityUpdateGood />
-                        <span className="whitespace-nowrap">Save Edit</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => startEditing(section)}
-                      type="button"
-                      disabled={editingSectionId !== null}
-                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 hover:text-blue-300 transition-all flex items-center justify-center min-w-[120px] ${editingSectionId !== null
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                        }`}
-                    >
-                      <FaRegEdit />
-                      <span className="whitespace-nowrap">Edit</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={editingSectionId !== null || loading}
-                      onClick={() => deleteSection(section)}
-                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 hover:text-red-300 transition-all flex items-center justify-center min-w-[120px] ${editingSectionId !== null
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                        }`}
-                    >
-                      <MdDelete />
-                      <span className="whitespace-nowrap">Delete</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/dashboard/create-new-subsection/${id}?section_id=${section._id}`
-                        )
-                      }
-                      disabled={editingSectionId !== null}
-                      className={`flex-1 sm:flex-none px-3 gap-2 py-1.5 text-sm rounded-md bg-green-900/50 text-green-400 hover:bg-green-800/50 hover:text-green-300 transition-all flex items-center justify-center min-w-[120px] ${editingSectionId !== null
-                          ? "opacity-50 cursor-not-allowed"
-                          : ""
-                        }`}
-                    >
-                      <IoMdAdd />
-                      <span className="whitespace-nowrap">
-                        Add Sub-sections
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+    <div className="w-full max-w-[1400px] mx-auto p-1 flex flex-col min-h-screen">
+      
+      {/* Header Area */}
+      <div className="mb-10 text-center lg:text-left">
+        <h1 className="text-3xl text-center font-black text-gray-100 tracking-tight uppercase">
+          CREATE <span className="text-red-600 ml-2">SECTION</span>
+        </h1>
+        <p className="text-[15px] text-center text-gray-500 font-black mt-1">
+          Deployment Hub for Course Modules
+        </p>
       </div>
 
-      {/* Create New Section Form */}
-      <div className="p-6 border border-gray-700 rounded-lg bg-gray-800">
-        <h2 className="text-xl font-semibold mb-4 text-white">
-          Create New Section
-        </h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-300 mb-1"
-            >
-              Section Name
-              <span className="text-red-500 ml-1">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={newSection.name}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              disabled={loading}
-            />
-          </div>
+      {/* Main Content Grid: Two Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 items-start">
+        
+        {/* --- COLUMN 1: EXISTING SECTIONS --- */}
+        <div className="flex flex-col space-y-4 h-full">
+          <h2 className="text-[18px] font-black text-gray-400 tracking-widest ml-1">Created Section</h2>
+          <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-4 max-h-[400px] overflow-y-scroll scrollbar-hide shadow-2xl flex-1">
+            {sections.length === 0 && !loading ? (
+              <p className="py-20 text-center text-gray-600 font-black uppercase text-xs">No active sections</p>
+            ) : (
+              sections.map((section) => (
+                <div key={section._id} className="bg-gray-900 border border-gray-700 rounded-xl p-5 mb-4 transition-all hover:border-gray-600">
+                  <div className="space-y-4">
+                    <div>
+                      {editingSectionId === section._id ? (
+                        <input
+                          name="name"
+                          value={updatedSection.name}
+                          onChange={updatedSectionHandler}
+                          className="w-full bg-gray-800 text-white p-3 rounded-lg border border-red-600/40 outline-none text-sm font-bold"
+                        />
+                      ) : (
+                        <h3 className="text-lg font-black text-gray-100 uppercase tracking-tight">{section.name}</h3>
+                      )}
+                    </div>
 
-          <div className="mb-4">
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-300 mb-1"
-            >
-              Section Description
-              <span className="text-red-500 ml-1">*</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={newSection.description}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows="3"
-              required
-              disabled={loading}
-            />
-          </div>
+                    <div>
+                      {editingSectionId === section._id ? (
+                        <textarea
+                          name="description"
+                          value={updatedSection.description}
+                          onChange={updatedSectionHandler}
+                          rows={2}
+                          className="w-full bg-gray-800 text-gray-300 p-3 rounded-lg border border-red-600/40 outline-none text-xs resize-none"
+                        />
+                      ) : (
+                        <p className="text-gray-400 text-xs leading-relaxed line-clamp-3">{section.description || "No data provided."}</p>
+                      )}
+                    </div>
 
-          <div className="pt-4 flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full sm:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <IoSend className="mr-2" />
-                  Create Section
-                </>
-              )}
-            </button>
+                    <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-800">
+                      {editingSectionId === section._id ? (
+                        <>
+                          <button onClick={updateSectionAPICall} className="bg-red-600 text-white px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 flex items-center gap-2">
+                            <MdOutlineSystemSecurityUpdateGood /> Commit
+                          </button>
+                          <button onClick={cancelEdit} className="bg-gray-800 text-gray-400 px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:text-white">
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => startEditing(section)} disabled={editingSectionId !== null} className="bg-gray-800 border border-gray-700 text-gray-400 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:border-red-600 hover:text-white transition-all disabled:opacity-20">
+                             Edit
+                          </button>
+                          <button onClick={() => deleteSection(section._id)} disabled={editingSectionId !== null} className="bg-gray-800 border border-gray-700 text-red-500 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all disabled:opacity-20">
+                         Delete
+                          </button>
+                          <button onClick={() => navigate(`/dashboard/create-new-subsection/${id}?section_id=${section._id}`)} disabled={editingSectionId !== null} className="bg-gray-800 border border-gray-700 text-green-500 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all ml-auto disabled:opacity-20">
+                             Sub-Section
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </form>
+        </div>
+
+        {/* --- COLUMN 2: CREATE FORM --- */}
+        <div className="flex flex-col space-y-4 lg:sticky lg:top-8 ">
+          <h2 className="text-[18px] font-black text-gray-400 tracking-widest ml-1">Create New Section</h2>
+          <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-6 md:p-8 shadow-2xl">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Title</label>
+                <input
+                  name="name"
+                  value={newSection.name} 
+                  onChange={handleInputChange}
+                  className="bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-4 text-sm focus:border-red-600 outline-none transition-all font-bold placeholder:text-gray-700"
+                  placeholder="e.g. CORE INFRASTRUCTURE"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Section Overview</label>
+                <textarea
+                  name="description"
+                  value={newSection.description}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-4 text-sm focus:border-red-600 outline-none transition-all font-medium resize-none placeholder:text-gray-700"
+                  placeholder="Describe technical course objectives..."
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-5 rounded-2xl text-[12px] font-black uppercase tracking-[0.25em] shadow-xl shadow-red-900/20 flex items-center justify-center gap-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "INITIALIZING..." : <><IoSend size={16} />Create Section</>}
+              </button>
+            </form>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 };
 
-export default React.memo(DashboardInstructorCreateNewSection);
+export default memo(DashboardInstructorCreateNewSection);

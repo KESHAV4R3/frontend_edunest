@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiConnector } from "../../services/apiConnector";
@@ -13,24 +13,20 @@ const DashboardInstructorCreateNewSubsection = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
-  const sectionId = searchParams.get("section_id");
+  
+  // Safely get sectionId
+  const sectionId = useMemo(() => searchParams.get("section_id"), [searchParams]);
+  
   const [subsections, setSubsections] = useState([]);
-  const { loading } = useSelector((state) => state.ui);
+  const { loading } = useSelector((state) => state.ui) || { loading: false };
 
-  // For new subsection creation
+  // Form States
   const [newSubsection, setNewSubsection] = useState({
-    sectionId,
-    title: "",
-    timeDuration: "",
-    description: "",
+    sectionId, title: "", timeDuration: "", description: "",
   });
-
-  // For editing existing subsection
-  const [editingSubsectionId, setEditingSubsectionId] = useState(null);
-  const [editedSubsection, setEditedSubsection] = useState({
-    title: "",
-    timeDuration: "",
-    description: "",
+  const [editingId, setEditingId] = useState(null);
+  const [editedData, setEditedData] = useState({
+    title: "", timeDuration: "", description: "",
   });
 
   const [videoFile, setVideoFile] = useState(null);
@@ -38,74 +34,55 @@ const DashboardInstructorCreateNewSubsection = () => {
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef(null);
 
-  // Fetch all subsections
-  const fetchAllSubsections = useCallback(async () => {
+  // --- API LOGIC ---
+
+  const fetchSubsections = useCallback(async () => {
+    if (!sectionId) return;
     dispatch(setLoading(true));
     try {
-      const response = await apiConnector(
-        "GET",
-        apiLinks.getAllSubsections + `/${sectionId}`
-      );
-      if (response.data) {
-        console.log(response.data.subSection);
-        setSubsections(response.data.subSection);
-      } else {
-        setSubsections([]);
+      const response = await apiConnector("GET", `${apiLinks.getAllSubsections}/${sectionId}`);
+      if (response?.success) {
+        setSubsections(response.data?.subSection || []);
       }
     } catch (error) {
-      console.error("Error fetching subsections:", error);
-      toast.error("Failed to fetch subsections");
+      console.error("Fetch Error:", error);
+      setSubsections([]);
     } finally {
       dispatch(setLoading(false));
     }
   }, [sectionId, dispatch]);
 
   useEffect(() => {
-    fetchAllSubsections();
-  }, [fetchAllSubsections]);
+    fetchSubsections();
+  }, [fetchSubsections]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    setNewSubsection((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setNewSubsection((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  const handleEditInputChange = useCallback((e) => {
+  const handleEditChange = useCallback((e) => {
     const { name, value } = e.target;
-    setEditedSubsection((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setEditedData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (!file.type.includes("video/mp4")) {
-        toast.error("Only MP4 videos are allowed", {
-          autoClose: 900,
-          hideProgressBar: true,
-        });
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Video file size must be less than 100MB", {
-          autoClose: 900,
-          hideProgressBar: true,
-        });
-        return;
-      }
-
-      setVideoFile(file);
-      setFileName(file.name);
-      setVideoPreview(URL.createObjectURL(file));
+    if (!file) return;
+    if (!file.type.includes("video/mp4")) {
+      toast.error("Please upload MP4 video only");
+      return;
     }
+    if (file.size > 50 * 1024 * 1024) { // Increased to 50MB for video
+      toast.error("Video must be under 50MB");
+      return;
+    }
+    setVideoFile(file);
+    setFileName(file.name);
+    setVideoPreview(URL.createObjectURL(file));
   };
 
-  const cancelVideoUpload = useCallback(() => {
+  const clearVideo = useCallback(() => {
     if (videoPreview) URL.revokeObjectURL(videoPreview);
     setVideoFile(null);
     setVideoPreview(null);
@@ -113,44 +90,15 @@ const DashboardInstructorCreateNewSubsection = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [videoPreview]);
 
-  // Start editing a subsection
-  const startEditing = useCallback((subsection) => {
-    setEditingSubsectionId(subsection._id);
-    setEditedSubsection({
-      title: subsection.title,
-      timeDuration: subsection.timeDuration,
-      description: subsection.description,
-    });
-  }, []);
-
-  // Cancel editing
-  const cancelEditing = useCallback(() => {
-    setEditingSubsectionId(null);
-    setEditedSubsection({
-      title: "",
-      timeDuration: "",
-      description: "",
-    });
-  }, []);
-
-  // Create new subsection
-  const handleSubmit = async (e) => {
+  const createSubSection = async (e) => {
     e.preventDefault();
-
-    if (
-      !newSubsection.title.trim() ||
-      !newSubsection.description.trim() ||
-      !videoFile
-    ) {
-      toast.error("Please fill in all required fields", {
-        autoClose: 900,
-        hideProgressBar: true,
-      });
+    if (!newSubsection.title || !videoFile) {
+      toast.error("Title and Video are required");
       return;
     }
 
+    dispatch(setLoading(true));
     try {
-      dispatch(setLoading(true));
       const formData = new FormData();
       formData.append("uploadedVideoFile", videoFile);
       formData.append("title", newSubsection.title);
@@ -158,455 +106,217 @@ const DashboardInstructorCreateNewSubsection = () => {
       formData.append("description", newSubsection.description);
       formData.append("sectionId", sectionId);
 
-      const response = await apiConnector(
-        "POST",
-        apiLinks.createSubSection,
-        null,
-        formData
-      );
-
-      if (!response.success) {
-        throw new Error("Unable to create subsection");
+      const response = await apiConnector("POST", apiLinks.createSubSection, null, formData);
+      if (response?.success) {
+        toast.success("Added successfully");
+        setNewSubsection({ sectionId, title: "", timeDuration: "", description: "" });
+        clearVideo();
+        fetchSubsections();
       }
-
-      toast.success("Subsection created successfully", {
-        autoClose: 900,
-        hideProgressBar: true,
-      });
-
-      // Refresh the list - we can just call it directly or rely on state update if we returned the new subsection
-      // Re-fetching is safer to ensure sync
-      await fetchAllSubsections();
-
-      // Reset form
-      setNewSubsection({
-        sectionId,
-        title: "",
-        timeDuration: "",
-        description: "",
-      });
-      cancelVideoUpload();
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(error.message || "Something went wrong");
+      toast.error("Error creating sub-section");
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-  // Update existing subsection
-  const handleUpdate = async (subsectionId) => {
+  const deleteSub = async (subId) => {
+    if (!window.confirm("Delete this video?")) return;
+    dispatch(setLoading(true));
     try {
-      dispatch(setLoading(true));
-      const data = {
-        subSectionId: subsectionId,
-        title: editedSubsection.title,
-        timeDuration: editedSubsection.timeDuration,
-        description: editedSubsection.description,
-      };
-      console.log(editedSubsection);
-      const response = await apiConnector(
-        "PATCH",
-        apiLinks.updateSubSection,
-        null,
-        data
-      );
-
-      console.log(response);
-
-      if (!response.success) {
-        toast.error("failed to update the subsection", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        return;
+      const response = await apiConnector("DELETE", `${apiLinks.deleteSubSection}/${sectionId}?subSectionId=${subId}`);
+      if (response?.success) {
+        setSubsections(prev => prev.filter(s => s._id !== subId));
+        toast.success("Deleted");
       }
-
-      // Optimistic update or re-fetch
-      // Here we update local state to avoid re-fetch if possible, but re-fetch is safer.
-      // The original code updated local state.
-      setSubsections((prev) =>
-        prev.map((element) => {
-          if (element._id == subsectionId) {
-            return {
-              ...element,
-              title: data.title || element.title,
-              timeDuration: data.timeDuration || element.timeDuration,
-              description: data.description || element.description,
-            };
-          }
-          return element;
-        })
-      );
-
-      toast.success("Subsection updated successfully", {
-        autoClose: 900,
-        hideProgressBar: true,
-      });
-      cancelEditing();
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(error.message || "Something went wrong");
+      toast.error("Delete failed");
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-  // Delete subsection
-  const deleteSubsection = async (subsectionId) => {
+  const updateSub = async (subId) => {
+    dispatch(setLoading(true));
     try {
-      dispatch(setLoading(true));
-      const url =
-        apiLinks.deleteSubSection +
-        `/${sectionId}?subSectionId=${subsectionId}`;
-
-      const response = await apiConnector("DELETE", url);
-
-      if (!response.success) {
-        toast.error("unable to delete subsection", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        return;
-      }
-
-      setSubsections(subsections.filter((value) => value._id != subsectionId));
-      toast.success("Subsection deleted successfully", {
-        autoClose: 900,
-        hideProgressBar: true,
-        pauseOnHover: false,
-        closeOnClick: true,
-        draggable: false,
+      const response = await apiConnector("PATCH", apiLinks.updateSubSection, null, {
+        subSectionId: subId, ...editedData
       });
+      if (response?.success) {
+        toast.success("Updated");
+        setEditingId(null);
+        fetchSubsections();
+      }
     } catch (error) {
-      toast.error(error.message || "Something went wrong");
+      toast.error("Update failed");
     } finally {
       dispatch(setLoading(false));
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6 text-white">Course Subsections</h1>
+    <div className="w-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col min-h-screen">
+      
+      {/* Header */}
+      <div className="mb-10 text-center lg:text-left">
+        <h1 className="text-3xl text-center font-black text-gray-100 tracking-tight uppercase">
+          CREATE <span className="text-red-600">SUB-SECTION</span>
+        </h1>
+         <p className="text-[15px] text-center text-gray-500 font-black mt-1">
+          Manage Video Lessons and Content
+        </p>
+      </div>
 
-      {/* Existing Subsections */}
-      <div className="mb-8 w-full">
-        <h2 className="text-xl font-semibold mb-4 text-gray-300">
-          Existing Subsections
-        </h2>
-        {subsections.length === 0 ? (
-          <div className="p-6 border border-gray-700 rounded-lg text-center">
-            <p className="text-gray-400">No subsections created yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4 p-6 w-full bg-black rounded-md max-h-[500px] overflow-y-auto">
-            {subsections.map((subsection) => (
-              <div
-                key={subsection._id}
-                className="w-full space-y-4 p-4 border border-gray-700 rounded-lg bg-gray-800"
-              >
-                {/* Responsive Flex: Text + Video */}
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Text Content */}
-                  <div className="flex-1 space-y-4">
-                    {/* Title */}
-                    <div>
-                      <p className="text-sm font-medium underline-offset-2 underline text-gray-400 uppercase tracking-wider">
-                        Title
-                      </p>
-                      {editingSubsectionId === subsection._id ? (
-                        <input
-                          type="text"
-                          name="title"
-                          value={editedSubsection.title}
-                          onChange={handleEditInputChange}
-                          className="w-full mt-2 p-2 bg-gray-700 border  border-gray-600 text-white rounded-md focus:border-2 outline-none"
-                        />
-                      ) : (
-                        <h3 className="text-xl font-bold text-white mt-1">
-                          {subsection.title}
-                        </h3>
-                      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        {/* --- LEFT COLUMN: LIST --- */}
+        <div className="flex flex-col space-y-4">
+          <h2 className="text-[18px] font-black text-gray-400 tracking-widest ml-1">Created Sub-Section</h2>
+          <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-4 max-h-[750px] overflow-y-auto scrollbar-hide shadow-2xl">
+            {subsections.length === 0 && !loading ? (
+              <p className="py-20 text-center text-gray-600 font-black uppercase text-xs">No videos added yet</p>
+            ) : (
+              subsections.map((sub) => (
+                <div key={sub._id} className="bg-gray-900 border border-gray-700 rounded-xl p-4 mb-4 transition-all">
+                  <div className="flex flex-col gap-4">
+                    {/* Video Preview */}
+                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden border border-gray-800">
+                      <video src={sub.videoUrl} controls className="w-full h-full object-contain" />
                     </div>
 
-                    {/* Duration */}
-                    <div>
-                      <p className="text-sm font-medium underline-offset-2 underline text-gray-400 uppercase tracking-wider">
-                        Duration
-                      </p>
-                      {editingSubsectionId === subsection._id ? (
-                        <input
-                          type="text"
-                          name="timeDuration"
-                          value={editedSubsection.timeDuration}
-                          onChange={handleEditInputChange}
-                          className="w-full mt-2 p-2 bg-gray-700 border border-gray-600 outline-none text-white rounded-md focus:border-2"
-                        />
-                      ) : (
-                        <p className="text-gray-300 mt-1">
-                          {subsection.timeDuration || "No duration specified"}
-                        </p>
-                      )}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[9px] font-black text-red-600 uppercase tracking-widest mb-1">Lesson Title</p>
+                        {editingId === sub._id ? (
+                          <input
+                            name="title" value={editedData.title} onChange={handleEditChange}
+                            className="w-full bg-gray-800 text-white p-2 rounded border border-red-600/40 outline-none text-sm font-bold"
+                          />
+                        ) : (
+                          <h3 className="text-lg font-black text-gray-100 uppercase tracking-tight">{sub.title}</h3>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Duration</p>
+                          {editingId === sub._id ? (
+                            <input
+                              name="timeDuration" value={editedData.timeDuration} onChange={handleEditChange}
+                              className="w-full bg-gray-800 text-white p-2 rounded border border-red-600/40 outline-none text-xs"
+                            />
+                          ) : (
+                            <p className="text-gray-300 text-xs font-bold">{sub.timeDuration || "00:00"}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Description</p>
+                        {editingId === sub._id ? (
+                          <textarea
+                            name="description" value={editedData.description} onChange={handleEditChange}
+                            rows={2} className="w-full bg-gray-800 text-gray-300 p-2 rounded border border-red-600/40 outline-none text-xs resize-none"
+                          />
+                        ) : (
+                          <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">{sub.description}</p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Description */}
-                    <div>
-                      <p className="text-sm font-medium underline-offset-2 underline text-gray-400 uppercase tracking-wider">
-                        Description
-                      </p>
-                      {editingSubsectionId === subsection._id ? (
-                        <textarea
-                          name="description"
-                          value={editedSubsection.description}
-                          onChange={handleEditInputChange}
-                          className="w-full mt-2 p-2 bg-gray-700 border outline-none border-gray-600 text-white rounded-md focus:border-2"
-                          rows="3"
-                        />
+                    {/* Simple Action Buttons */}
+                    <div className="flex gap-2 pt-4 border-t border-gray-800">
+                      {editingId === sub._id ? (
+                        <>
+                          <button onClick={() => updateSub(sub._id)} className="bg-red-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 flex items-center gap-1.5">
+                             Save
+                          </button>
+                          <button onClick={() => setEditingId(null)} className="bg-gray-800 text-gray-400 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:text-white">
+                            Cancel
+                          </button>
+                        </>
                       ) : (
-                        <p className="text-gray-300 mt-1">
-                          {subsection.description || "No description provided"}
-                        </p>
+                        <>
+                          <button onClick={() => {setEditingId(sub._id); setEditedData(sub);}} className="bg-gray-800 border border-gray-700 text-gray-400 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:border-red-600 hover:text-white transition-all">
+                           Edit
+                          </button>
+                          <button onClick={() => deleteSub(sub._id)} className="bg-gray-800 border border-gray-700 text-red-500 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
+                            Delete
+                          </button>
+                        </>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Responsive Video */}
-                  <div className="w-full md:w-[300px] flex-shrink-0">
-                    <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-                      Video
-                    </p>
-                    <div className="mt-2 rounded-md overflow-hidden bg-black aspect-video">
-                      <video
-                        controls
-                        className="w-full h-full object-cover"
-                        src={subsection.videoUrl}
-                      />
                     </div>
                   </div>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
 
-                {/* Action Buttons */}
-                <div className="pt-3 mt-3 border-t border-gray-700 flex justify-end space-x-3">
-                  {editingSubsectionId === subsection._id ? (
-                    <>
-                      <button
-                        onClick={cancelEditing}
-                        type="button"
-                        className="px-3 py-1.5 cursor-pointer text-sm rounded-md bg-orange-900/50 text-orange-400 hover:bg-orange-800/50 flex items-center"
-                      >
-                        <MdCancel className="mr-2" />
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleUpdate(subsection._id)}
-                        type="button"
-                        disabled={loading}
-                        className="px-3 py-1.5 text-sm rounded-md cursor-pointer bg-green-900/50 text-green-400 hover:bg-green-800/50 flex items-center disabled:opacity-50"
-                      >
-                        <FaCheck className="mr-2" />
-                        Save Changes
-                      </button>
-                    </>
+        {/* --- RIGHT COLUMN: CREATE FORM (STICKY) --- */}
+        <div className="flex flex-col space-y-4 lg:sticky lg:top-8">
+          <h2 className="text-[18px] font-black text-gray-400 tracking-widest ml-1">Create Sub-Section</h2>
+          <div className="bg-gray-800 border-2 border-gray-700 rounded-2xl p-6 md:p-8 shadow-2xl">
+            <form onSubmit={createSubSection} className="space-y-5">
+              
+              <div className="flex flex-col gap-1.5">
+                <div className={`border-2 border-dashed rounded-xl p-4 text-center transition-all ${videoFile ? 'border-red-600 bg-red-600/5' : 'border-gray-700 bg-gray-900'}`}>
+                  {videoPreview ? (
+                    <div className="relative">
+                      <video src={videoPreview} className="w-full rounded-lg bg-black aspect-video mb-2" />
+                      <button type="button" onClick={clearVideo} className="absolute -top-2 -right-2 bg-red-600 p-1.5 rounded-full text-white shadow-lg"><FaTimes size={12} /></button>
+                      <p className="text-[10px] text-gray-400 truncate px-2">{fileName}</p>
+                    </div>
                   ) : (
-                    <>
-                      <button
-                        onClick={() => startEditing(subsection)}
-                        type="button"
-                        disabled={editingSubsectionId !== null}
-                        className={`px-3 py-1.5 text-sm rounded-md bg-blue-900/50 text-blue-400 hover:bg-blue-800/50 flex items-center ${editingSubsectionId !== null
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                          }`}
-                      >
-                        <FaRegEdit className="mr-2" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteSubsection(subsection._id)}
-                        type="button"
-                        disabled={editingSubsectionId !== null || loading}
-                        className={`px-3 py-1.5 text-sm rounded-md bg-red-900/50 text-red-400 hover:bg-red-800/50 flex items-center ${editingSubsectionId !== null || loading
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                          }`}
-                      >
-                        <MdDelete className="mr-2" />
-                        Delete
-                      </button>
-                    </>
+                    <label className="cursor-pointer flex flex-col items-center py-6">
+                      <FaRegFileVideo size={40} className="text-gray-700 mb-2" />
+                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Select MP4 Video</span>
+                      <input type="file" ref={fileInputRef} accept="video/mp4" onChange={handleVideoChange} className="hidden" />
+                    </label>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Create New Subsection Form */}
-      <div className="p-6 border border-gray-700 rounded-lg bg-gray-800">
-        <h2 className="text-xl font-semibold mb-4 text-white">
-          Create New Subsection
-        </h2>
-        <form onSubmit={handleSubmit}>
-          {/* Title Field */}
-          <div className="mb-4">
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-300 mb-1"
-            >
-              Title <span className="text-red-500 ml-1">*</span>
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={newSubsection.title}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md  outline-none focus:border-2"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {/* Time Duration Field */}
-          <div className="mb-4">
-            <label
-              htmlFor="timeDuration"
-              className="block text-sm font-medium text-gray-300 mb-1"
-            >
-              Time Duration (e.g., 10:30)
-            </label>
-            <input
-              type="text"
-              id="timeDuration"
-              name="timeDuration"
-              value={newSubsection.timeDuration}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:border-2 outline-none  "
-              disabled={loading}
-            />
-          </div>
-
-          {/* Description Field */}
-          <div className="mb-4">
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-300 mb-1"
-            >
-              Description <span className="text-red-500 ml-1">*</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={newSubsection.description}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded-md  focus:border-2 outline-none"
-              rows="3"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {/* Video Upload Field */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Video <span className="text-red-500 ml-1">*</span>
-            </label>
-            <div
-              className={`border-2 border-dashed ${videoFile ? "border-green-500" : "border-gray-400"
-                } rounded-lg p-6 text-center transition-colors`}
-            >
-              <div className="flex justify-center items-center flex-col">
-                {videoPreview ? (
-                  <div className="w-full relative">
-                    <div className="relative pt-[56.25%]">
-                      <video
-                        controls
-                        className="absolute inset-0 w-full h-full bg-black rounded-md"
-                        src={videoPreview}
-                      />
-                    </div>
-                    <div className="mt-2 flex justify-between items-center">
-                      <p className="text-green-400 truncate max-w-[70%]">
-                        {fileName}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={cancelVideoUpload}
-                        className="text-red-500 hover:text-red-400 p-1"
-                        title="Remove video"
-                      >
-                        <FaTimes className="text-lg" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <FaRegFileVideo className="text-[70px] text-gray-600" />
-                    <div className="mt-4 flex text-sm text-gray-600">
-                      <label
-                        htmlFor="video-upload"
-                        className="relative cursor-pointer bg-transparent rounded-md font-medium text-red-500 hover:text-blue-500 focus-within:outline-none"
-                      >
-                        <span>Upload a video file</span>
-                        <input
-                          id="video-upload"
-                          ref={fileInputRef}
-                          name="video"
-                          type="file"
-                          accept="video/mp4"
-                          onChange={handleVideoChange}
-                          className="sr-only"
-                          required
-                        />
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      MP4 format only (max 5MB)
-                    </p>
-                  </>
-                )}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Title</label>
+                <input
+                  name="title" value={newSubsection.title} onChange={handleInputChange} required
+                  className="bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none font-bold"
+                  placeholder="Lesson Title"
+                />
               </div>
-            </div>
-          </div>
 
-          <div className="pt-4 flex gap-2 flex-wrap items-center justify-center space-x-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              disabled={loading}
-              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !videoFile}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <IoSend className="mr-2" />
-                  Create Subsection
-                </>
-              )}
-            </button>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Duration (MM:SS)</label>
+                <input
+                  name="timeDuration" value={newSubsection.timeDuration} onChange={handleInputChange}
+                  className="bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none font-bold"
+                  placeholder="e.g. 12:45"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Description</label>
+                <textarea
+                  name="description" value={newSubsection.description} onChange={handleInputChange}
+                  rows={3} required className="bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-4 text-sm focus:border-red-600 outline-none resize-none"
+                  placeholder="Lesson details..."
+                />
+              </div>
+
+              <button
+                type="submit" disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl text-[12px] font-black uppercase tracking-[0.2em] shadow-xl shadow-red-900/20 flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+              >
+                {loading ? "Adding..." : <><IoSend size={16} /> Add Lesson</>}
+              </button>
+            </form>
           </div>
-        </form>
+        </div>
+
       </div>
     </div>
   );
 };
 
-export default React.memo(DashboardInstructorCreateNewSubsection);
+export default memo(DashboardInstructorCreateNewSubsection);

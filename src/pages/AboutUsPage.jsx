@@ -1,370 +1,429 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import ContactForm from "../components/aboutUsPage/ContactForm";
 import Footer from "../components/application/Footer";
 import { useNavigate } from "react-router-dom";
 import ReviewSection from "../components/homePage/ReviewSection";
+import { 
+  FaRocket, 
+  FaUsers, 
+  FaGraduationCap, 
+  FaAward,
+  FaHeart,
+  FaLightbulb,
+  FaHandshake,
+  FaChartLine
+} from "react-icons/fa";
 
-// Memoize static data to prevent recreation on every render
+// Memoize static data
 const STATIC_DATA = {
-  images: [
+  heroImages: [
     {
-      url: "https://res.cloudinary.com/dort5nnis/image/upload/v1741757554/img1_utd6w0.jpg",
-      alt: "Stay Consistent with us",
+      url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      alt: "Team Collaboration",
+      title: "Together We Grow"
     },
     {
-      url: "https://res.cloudinary.com/dort5nnis/image/upload/v1741757594/customer-service-handsome-man-grey-suit-with-computer-headset-writing-down-notes_i6y4gn.jpg",
-      alt: "Expert Faculties",
+      url: "https://images.unsplash.com/photo-1553877522-43269d4ea984?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      alt: "Learning Success",
+      title: "Unlocking Potential"
     },
     {
-      url: "https://res.cloudinary.com/dort5nnis/image/upload/v1741757676/digital-tablet-screen-smart-tech_rgct3z.jpg",
-      alt: "Track yourself for better results",
+      url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      alt: "Innovation",
+      title: "Driving Innovation"
     },
+    {
+      url: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      alt: "Success Stories",
+      title: "Building Success"
+    }
   ],
+  
   statsTargets: [50, 10, 300, 500],
   statsLabels: ["Courses", "Years Experience", "Instructors", "Students"],
+  
+  successStories: [
+    {
+      name: "Sarah Johnson",
+      role: "Full-Stack Developer",
+      story: "From complete beginner to landing a job at Google in 9 months. The structured learning path changed my career trajectory.",
+      image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
+      before: "Marketing Manager",
+      after: "Senior Developer"
+    },
+    {
+      name: "Michael Chen",
+      role: "Data Scientist",
+      story: "The practical projects and mentorship helped me transition from finance to tech. Now I lead AI initiatives at a Fortune 500 company.",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
+      before: "Financial Analyst",
+      after: "Lead Data Scientist"
+    },
+    {
+      name: "Priya Sharma",
+      role: "Cloud Architect",
+      story: "As a working mother, the flexible schedule and hands-on labs made it possible to upskill while managing family responsibilities.",
+      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80",
+      before: "IT Support",
+      after: "Cloud Architect"
+    }
+  ],
+  
+  values: [
+    {
+      icon: <FaHeart />,
+      title: "Passion for Education",
+      description: "We believe learning should be engaging, exciting, and transformative.",
+      color: "from-red-400 to-pink-500"
+    },
+    {
+      icon: <FaLightbulb />,
+      title: "Innovation First",
+      description: "Constantly evolving our platform with cutting-edge technology.",
+      color: "from-yellow-400 to-orange-500"
+    },
+    {
+      icon: <FaUsers />,
+      title: "Community Driven",
+      description: "Learning is better together. We foster collaboration and support.",
+      color: "from-blue-400 to-cyan-500"
+    },
+    {
+      icon: <FaHandshake />,
+      title: "Student Success",
+      description: "Your achievements are our ultimate measure of success.",
+      color: "from-green-400 to-emerald-500"
+    }
+  ]
 };
 
 const AboutUsPage = () => { 
   const navigate = useNavigate();
-  const [loadedImages, setLoadedImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [stats, setStats] = useState(
     STATIC_DATA.statsLabels.map((label) => ({ number: "0", label }))
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // Memoize expensive calculations
-  const memoizedImages = useMemo(() => STATIC_DATA.images, []);
-
-  const handleImageLoad = (index) => {
-    setLoadedImages((prev) => [...prev, index]);
-  };
-
-  // Optimized stats animation with requestAnimationFrame
-  const animateStats = () => {
-    const startTime = performance.now();
-    const duration = 1500; // Reduced from 2000ms for faster loading
-
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      setStats((prev) =>
-        prev.map((stat, i) => ({
-          ...stat,
-          number: Math.floor(progress * STATIC_DATA.statsTargets[i]).toString(),
-        }))
-      );
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  };
-
-  // Load data with minimal delay
+  // Auto-slide images
   useEffect(() => {
-    const loadData = async () => {
-      // Start stats animation immediately
-      animateStats();
-
-      setLoading(false);
-    };
-
-    loadData();
-
-    return () => {
-      // Cleanup if needed
-    };
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => 
+        prev === STATIC_DATA.heroImages.length - 1 ? 0 : prev + 1
+      );
+    }, 4000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Skeleton Loading Components - memoized
-  const SkeletonText = React.memo(({ lines = 1, width = "full" }) => {
-    return (
-      <div className="space-y-2">
-        {Array.from({ length: lines }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-4 bg-gray-700 rounded animate-pulse w-${width}`}
-          ></div>
-        ))}
-      </div>
-    );
-  });
+  // Animate stats
+  useEffect(() => {
+    const animateStats = () => {
+      let startTime;
+      const duration = 2000;
 
-  const SkeletonImageCard = React.memo(() => (
-    <div className="relative group overflow-hidden rounded-xl cursor-pointer shadow-xl min-h-[200px] sm:min-h-[320px] bg-gray-700 animate-pulse">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full bg-gray-600"></div>
-      </div>
-    </div>
-  ));
+      const step = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
 
-  const SkeletonStatCard = React.memo(() => (
-    <div className="bg-gray-900/50 p-4 rounded-lg text-center">
-      <div className="h-10 bg-gray-700 rounded animate-pulse mb-2 w-3/4 mx-auto"></div>
-      <div className="h-6 bg-gray-700 rounded animate-pulse w-1/2 mx-auto"></div>
-    </div>
-  ));
+        setStats((prev) =>
+          prev.map((stat, i) => ({
+            ...stat,
+            number: Math.floor(progress * STATIC_DATA.statsTargets[i]).toString(),
+          }))
+        );
 
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      };
+
+      requestAnimationFrame(step);
+    };
+
+    const timer = setTimeout(() => {
+      animateStats();
+      setLoading(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Loading skeleton
   if (loading) {
     return (
-      <div className="w-full bg-dark_bg text-white py-12 px-4 sm:px-6 lg:px-10 min-h-screen">
-        {/* Optimized skeleton loading with fewer elements */}
-        <section className="text-center max-w-4xl mx-auto mb-16">
-          <div className="h-12 bg-gray-700 rounded animate-pulse w-3/4 mx-auto mb-4"></div>
-          <div className="w-24 h-1 bg-gray-700 rounded-full mx-auto mt-6"></div>
-        </section>
-
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 mb-16">
-          {[1, 2, 3].map((_, index) => (
-            <SkeletonImageCard key={index} />
-          ))}
-        </section>
-
-        <section className="max-w-5xl mx-auto mb-16 px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2].map((_, index) => (
-            <div
-              key={index}
-              className="bg-gray-800/50 p-6 rounded-xl border-t-4 border-gray-700"
-            >
-              <SkeletonText lines={4} width="full" />
+      <div className="w-full bg-dark_bg text-white py-12 px-4 min-h-screen">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="h-64 bg-gray-800 rounded-xl animate-pulse"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="h-6 bg-gray-800 rounded animate-pulse w-3/4"></div>
+              <div className="h-4 bg-gray-800 rounded animate-pulse"></div>
+              <div className="h-4 bg-gray-800 rounded animate-pulse w-5/6"></div>
             </div>
-          ))}
-        </section>
-
-        <section className="max-w-5xl mx-auto mb-16 px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((_, index) => (
-              <SkeletonStatCard key={index} />
-            ))}
+            <div className="h-48 bg-gray-800 rounded animate-pulse"></div>
           </div>
-        </section>
-
-        <div className="h-20 bg-gray-900 mt-16"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-dark_bg text-white py-12 mt-10 px-4 sm:px-6 lg:px-10 min-h-screen">
-      {/* Header Section */}
-      <section className="text-center max-w-4xl mx-auto mb-16 animate-fade-in">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 leading-tight">
-          Driving Innovation in Online Education for a Brighter Future
-        </h1>
-        <div className="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-500 mx-auto mt-6 rounded-full"></div>
-      </section>
-
-      {/* Image Grid with Intersection Observer for lazy loading */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 mb-16">
-        {memoizedImages.map((value, index) => (
-          <LazyImageCard
+    <div className="w-full bg-dark_bg text-white min-h-screen">
+      {/* Hero Section with Image Slider */}
+      <section className="relative h-[70vh] overflow-hidden">
+        {STATIC_DATA.heroImages.map((image, index) => (
+          <motion.div
             key={index}
-            index={index}
-            value={value}
-            loadedImages={loadedImages}
-            onLoad={handleImageLoad}
-          />
-        ))}
-      </section>
-
-      {/* Introduction Section */}
-      <section className="text-center max-w-4xl mx-auto mb-16 px-4">
-        <p className="text-gray-300 text-lg md:text-xl leading-relaxed">
-          We are passionate about revolutionizing the way we learn. Our
-          innovative platform combines{" "}
-          <span className="text-blue-400 font-medium">
-            technology, expertise,
-          </span>{" "}
-          and community to create an{" "}
-          <span className="text-blue-400 font-medium">
-            engaging and educational experience
-          </span>{" "}
-          that adapts to your learning style.
-        </p>
-      </section>
-
-      {/* Founding Story */}
-      <FoundingStorySection />
-
-      {/* Vision and Mission Section */}
-      <VisionMissionSection />
-
-      {/* Statistics Section */}
-      <section className="max-w-5xl mx-auto mb-16 px-4">
-        <div className="bg-gray-800/50 p-6 rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">
-            Our Impact in Numbers
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="bg-gray-900/50 p-4 rounded-lg text-center hover:bg-gray-800 transition-colors"
-              >
-                <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-2">
-                  {stat.number}+
-                </h3>
-                <p className="text-gray-300 text-lg">{stat.label}</p>
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ 
+              opacity: currentImageIndex === index ? 1 : 0,
+              x: currentImageIndex === index ? 0 : 100,
+              scale: currentImageIndex === index ? 1 : 1.1
+            }}
+            transition={{ duration: 0.8 }}
+            className={`absolute inset-0 ${currentImageIndex === index ? 'z-10' : 'z-0'}`}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10" />
+            <img
+              src={image.url}
+              alt={image.alt}
+              className="w-full h-full object-cover"
+            />
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: currentImageIndex === index ? 1 : 0, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="absolute inset-0 z-20 flex items-center"
+            >
+              <div className="max-w-6xl mx-auto px-6">
+                <h1 className="text-5xl md:text-7xl font-bold mb-4">
+                  {image.title}
+                </h1>
+                <p className="text-xl md:text-2xl text-gray-300 max-w-2xl">
+                  Every success story begins with a decision to try.
+                </p>
               </div>
-            ))}
+            </motion.div>
+          </motion.div>
+        ))}
+        
+        {/* Image indicators */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex space-x-3">
+          {STATIC_DATA.heroImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                currentImageIndex === index 
+                  ? 'bg-white w-8' 
+                  : 'bg-gray-500 hover:bg-gray-400'
+              }`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Our Story - Personal Connection */}
+      <section className="py-16 px-4 max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Journey</span> Together
+          </h2>
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-500 mx-auto rounded-full mb-8" />
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Hi, I'm Keshav Kumar. Like many of you, I started my journey feeling overwhelmed by 
+            the vast world of technology. The turning point came when I realized that learning 
+            shouldn't be a lonely struggle—it should be an exciting adventure shared with 
+            mentors and peers who genuinely care about your success.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-6"
+          >
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                <FaRocket className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2">The Spark</h3>
+                <p className="text-gray-300">
+                  In 2015, after helping dozens of friends transition into tech careers, 
+                  I discovered the power of structured, hands-on learning combined with 
+                  community support.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-teal-600 flex items-center justify-center">
+                <FaChartLine className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2">The Growth</h3>
+                <p className="text-gray-300">
+                  What started as weekend workshops grew into a full-fledged platform, 
+                  evolving with feedback from thousands of learners worldwide.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-600 flex items-center justify-center">
+                <FaAward className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2">Today's Impact</h3>
+                <p className="text-gray-300">
+                  We've helped transform careers, launch startups, and build 
+                  confidence in learners from diverse backgrounds.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="relative"
+          >
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 shadow-2xl">
+              <div className="aspect-video rounded-xl overflow-hidden mb-6">
+                <img 
+                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+                  alt="Learning Community"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-center">
+                <h4 className="text-2xl font-bold mb-3">Your Success is Our Story</h4>
+                <p className="text-gray-300">
+                  Every student's achievement adds a new chapter to our collective journey.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Our Values */}
+      <section className="py-16 px-4 max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-4xl font-bold mb-4">
+            Our Core <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Values</span>
+          </h2>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            The principles that guide everything we do
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {STATIC_DATA.values.map((value, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -10, transition: { duration: 0.2 } }}
+              className={`bg-gradient-to-br ${value.color} bg-opacity-10 rounded-2xl p-6 border border-gray-700 hover:border-gray-500 transition-all duration-300`}
+            >
+              <div className={`text-3xl mb-4 text-transparent bg-clip-text bg-gradient-to-r ${value.color}`}>
+                {value.icon}
+              </div>
+              <h3 className="text-xl font-bold mb-3">{value.title}</h3>
+              <p className="text-gray-300">{value.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Impact Statistics */}
+      <section className="py-16 bg-gradient-to-b from-gray-900/50 to-dark_bg">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-3xl p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Impact</span> in Numbers
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="text-center p-6 rounded-xl bg-gray-900/50 hover:bg-gray-800/50 transition-colors"
+                >
+                  <div className="text-5xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    {stat.number}+
+                  </div>
+                  <div className="text-gray-300 text-lg">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Form */}
-      <section className="max-w-3xl mx-auto mb-16 px-4 border-gray-600 border p-10 rounded-lg">
+      {/* Contact Section */}
+      <section className="py-16 px-4 max-w-3xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-4xl font-bold mb-4">Let's Connect</h2>
+          <p className="text-xl text-gray-300">
+            Have questions? Want to share your story? We'd love to hear from you.
+          </p>
+        </motion.div>
         <ContactForm />
       </section>
 
-      {/* CTA Section */}
-      <CTASection navigate={navigate} />
+      {/* Final CTA */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-3xl p-12 text-center border border-gray-700 shadow-2xl"
+          >
+            <h2 className="text-4xl font-bold mb-6">
+              Ready to Write <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Your Success Story?</span>
+            </h2>
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+              Join thousands who have transformed their careers and lives through education.
+            </p>
+            <button
+              onClick={() => navigate("/register")}
+              className="px-10 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-bold text-lg rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
+            >
+              Start Your Journey Today
+            </button>
+          </motion.div>
+        </div>
+      </section>
 
-      {/* Review Section */}
+      {/* Reviews & Footer */}
       <ReviewSection />
-
-      {/* Footer */}
       <Footer />
     </div>
   );
 };
-
-// Extracted components for better readability and performance
-const LazyImageCard = React.memo(({ index, value, loadedImages, onLoad }) => (
-  <div className="relative group overflow-hidden rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 min-h-[200px] sm:min-h-[320px]">
-    {!loadedImages.includes(index) && (
-      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-800 z-10">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-600"></div>
-        <p className="mt-3 text-gray-600 text-sm">Loading image...</p>
-      </div>
-    )}
-    <img
-      src={value.url}
-      alt={value.alt}
-      className={`w-full h-60 sm:h-80 object-cover transition-all duration-500 ${
-        loadedImages.includes(index)
-          ? "opacity-100 scale-100"
-          : "opacity-0 scale-95"
-      } group-hover:scale-105`}
-      onLoad={() => onLoad(index)}
-      loading="lazy"
-      decoding="async"
-    />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-      <span className="text-white text-lg font-medium translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-        {value.alt}
-      </span>
-    </div>
-  </div>
-));
-
-const FoundingStorySection = React.memo(() => (
-  <section className="max-w-5xl mx-auto mb-16 px-4">
-    <div className="bg-gray-800/50 p-6 sm:p-8 rounded-xl border-l-4 border-red-400 shadow-lg">
-      <h2 className="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400 mb-4">
-        Our Founding Story
-      </h2>
-      <div className="space-y-4 text-gray-300 text-lg">
-        <p>
-          Founded in 2015, we started as a small team of educators and
-          technologists who believed learning should be accessible, engaging,
-          and effective for everyone.
-        </p>
-        <p>
-          What began as a passion project has grown into a platform serving
-          thousands of learners worldwide, with innovative features that make
-          education more interactive and personalized than ever before.
-        </p>
-      </div>
-    </div>
-  </section>
-));
-
-const VisionMissionSection = React.memo(() => (
-  <section className="max-w-5xl mx-auto mb-16 px-4">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <VisionCard />
-      <MissionCard />
-    </div>
-  </section>
-));
-
-const VisionCard = React.memo(() => (
-  <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl border-t-4 border-yellow-400 shadow-lg hover:shadow-xl transition-shadow">
-    <div className="flex items-center mb-4">
-      <div className="w-10 h-10 rounded-full bg-yellow-400/20 flex items-center justify-center mr-4">
-        <svg
-          className="w-6 h-6 text-yellow-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-          ></path>
-        </svg>
-      </div>
-      <h2 className="text-xl font-bold text-yellow-400">Our Vision</h2>
-    </div>
-    <p className="text-gray-300 text-lg">
-      To create a world where high-quality education is accessible to anyone,
-      anywhere, breaking down barriers and unlocking human potential through
-      innovative learning solutions.
-    </p>
-  </div>
-));
-
-const MissionCard = React.memo(() => (
-  <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl border-t-4 border-green-400 shadow-lg hover:shadow-xl transition-shadow">
-    <div className="flex items-center mb-4">
-      <div className="w-10 h-10 rounded-full bg-green-400/20 flex items-center justify-center mr-4">
-        <svg
-          className="w-6 h-6 text-green-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M13 10V3L4 14h7v7l9-11h-7z"
-          ></path>
-        </svg>
-      </div>
-      <h2 className="text-xl font-bold text-green-400">Our Mission</h2>
-    </div>
-    <p className="text-gray-300 text-lg">
-      To empower learners of all ages and backgrounds through technology-driven
-      education, expert guidance, and a supportive community that fosters
-      continuous growth and achievement.
-    </p>
-  </div>
-));
-
-const CTASection = React.memo(({ navigate }) => (
-  <section className="max-w-3xl mx-auto px-4 mb-10">
-    <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-8 rounded-xl shadow-2xl text-center border border-gray-700">
-      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-        Ready to Start Your Learning Journey?
-      </h2>
-      <p className="text-gray-300 mb-6 text-lg">
-        Join thousands of learners who are transforming their lives through
-        education.
-      </p>
-      <button
-        onClick={() => navigate("/register")}
-        className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 duration-300"
-      >
-        Start Learning Today
-      </button>
-    </div>
-  </section>
-));
 
 export default AboutUsPage;

@@ -28,10 +28,11 @@ const CartPage = () => {
   const [purchaseButtonLoading, setPurchaseButtonLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
   const dispatch = useDispatch();
 
   // Create an array of course IDs
-  const courseIds = cartCourses.map((course) => course._id);
+  const courseIds = cartCourses?.map((course) => course._id) || [];
 
   // Calculate cart price
   useEffect(() => {
@@ -44,8 +45,8 @@ const CartPage = () => {
     try {
       setLoading(true);
       const response = await apiConnector("GET", apiLinks.getCartCourse);
-      if (response.success) {
-        dispatch(setCartCourses(response.courses.cartCourse));
+      if (response?.success) {
+        dispatch(setCartCourses(response?.courses?.cartCourse || []));
       } else {
         toast.error("Failed to fetch cart data");
       }
@@ -118,20 +119,33 @@ const CartPage = () => {
     }
 
     try {
-      await buyCourse(courseIds, user, navigate, async (isLoading) => {
-        dispatch(setPaymentLoading(isLoading));
-        if (!isLoading) {
-          // Clear cart after successful payment
+      await buyCourse(
+        courseIds,
+        user,
+        navigate,
+        (isLoading) => {
+          dispatch(setPaymentLoading(isLoading));
+        },
+        async () => {
+          // This callback runs ONLY on successful payment verification
+          setPaymentCompleted(true);
           await handleResetCart();
-          toast.success("Payment successful! Cart has been cleared.", {
-            autoClose: 900,
-            hideProgressBar: true,
+          
+          // Show success message and redirect
+          toast.success("Payment successful! Redirecting to your courses...", {
+            autoClose: 2000,
+            hideProgressBar: false,
             pauseOnHover: false,
             closeOnClick: true,
             draggable: false,
           });
+          
+          // Redirect after a short delay to show the success message
+          setTimeout(() => {
+            navigate("/dashboard/courses");
+          }, 2000);
         }
-      });
+      );
     } catch (error) {
       console.error("Purchase failed:", error);
       toast.error("Payment failed. Please try again.", {
@@ -149,14 +163,37 @@ const CartPage = () => {
 
   const SelectedLoader = SpinnerLoader;
 
+  // Show loading state
   if (loading) {
     return <SelectedLoader />;
   }
 
+  // Show payment completion state
+  if (paymentCompleted) {
+    return (
+      <div className="w-full h-full flex justify-center items-center -mt-10">
+        <div className="text-center">
+          <div className="text-green-500 text-6xl mb-4">✓</div>
+          <p className="text-gray-300 text-[25px] mb-4">Payment Successful!</p>
+          <p className="text-gray-400">Redirecting to your courses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty cart state
   if (cartCourses.length === 0) {
     return (
       <div className="w-full h-full flex justify-center items-center -mt-10">
-        <p className="text-gray-300 text-[25px]">No course available in cart</p>
+        <div className="text-center">
+          <p className="text-gray-300 text-[25px] mb-4">No course available in cart</p>
+          <button
+            onClick={() => navigate("/dashboard/courses")}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+          >
+            Browse Courses
+          </button>
+        </div>
       </div>
     );
   }

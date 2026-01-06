@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { IoMdLogIn } from "react-icons/io";
 import { apiConnector } from "../services/apiConnector";
@@ -43,10 +43,22 @@ const LoginPage = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const updateRole = (index) => {
-    setCurrentRole(roles[index]);
-    setBodyData((prev) => ({ ...prev, accountType: roles[index].role }));
-  };
+  useEffect(() => {
+    const savedRole = localStorage.getItem("role");
+    if (savedRole) {
+      const roleIndex = roles.findIndex(role => role.role === savedRole);
+      if (roleIndex !== -1) {
+        setCurrentRole(roles[roleIndex]);
+      }
+    }
+  }, [roles]);
+
+const updateRole = (index) => {
+  const selectedRole = roles[index].role;
+  setCurrentRole(roles[index]);
+  setBodyData((prev) => ({ ...prev, accountType: selectedRole }));
+  localStorage.setItem("role", selectedRole); // Save role to localStorage
+};
 
   const updateUserData = (event) => {
     setBodyData((prev) => ({
@@ -77,8 +89,6 @@ const LoginPage = () => {
           null,
           bodyData
         );
-
-        console.log("Login response:", response);
 
         if (!response?.success) {
           toast.warn(response?.message || "Login failed", {

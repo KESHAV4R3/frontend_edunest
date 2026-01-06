@@ -31,9 +31,7 @@ const CourseCompleteViewByStudent = () => {
   const [totalVideo, setTotalVideo] = useState(0);
 
   // Review states
-  const [reviews, setReviews] = useState([]);
   const [userReview, setUserReview] = useState(null);
-  const [averageRating, setAverageRating] = useState(0);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     review: "",

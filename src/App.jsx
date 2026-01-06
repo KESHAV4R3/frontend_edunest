@@ -46,6 +46,7 @@ const CatagoryCourse = lazy(() => import("./pages/CatagoryCourse"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const PageNotFound = lazy(() => import("./pages/PageNotFound"));
+const StudentAnalytics = lazy(() => import("./components/dashBoardpage/StudentAnalytics"));
 
 function App() {
   const dispatch = useDispatch();
@@ -221,11 +222,21 @@ function App() {
               }
             />
             <Route
-              path="Earnings"
+              path="Analytics"
               element={
                 <NonLoggedInPrivate dashboard="true">
                   <Suspense fallback={<SimpleSpinner />}>
                     <Earnings />
+                  </Suspense>
+                </NonLoggedInPrivate>
+              }
+            />
+            <Route
+              path="student-Analytics"
+              element={
+                <NonLoggedInPrivate dashboard="true">
+                  <Suspense fallback={<SimpleSpinner />}>
+                    <StudentAnalytics />
                   </Suspense>
                 </NonLoggedInPrivate>
               }

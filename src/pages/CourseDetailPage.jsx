@@ -72,19 +72,25 @@ const CourseDetailPage = () => {
         }
 
         const basicData = {
-          name: response.data.name,
-          description: response.data.description,
-          language: response.data.language,
-          price: response.data.price,
-          thumbnail: response.data.thumbnail,
-          averageRating: response.data.averageRating,
+          name: response?.data?.name || "",
+          description: response?.data?.description || "",
+          language: response?.data?.language || "",
+          price: response?.data?.price || 0,
+          thumbnail: response?.data?.thumbnail || "",
+          averageRating: Number(response?.data?.averageRating) || 0,
         };
         setBasicData(basicData);
-        setInstructor(response.data.instructor);
-        setWhatYouWillLearn(JSON.parse(response.data.whatYouWillLearn || "[]"));
-        setSections(response.data.section);
-        setRatingAndReviews(response.data.reviews || []);
-        setStudentEnrolled(response.data.studentEnrolled || []);
+        setInstructor(response?.data?.instructor || []);
+        let learned = [];
+        try {
+          learned = JSON.parse(response?.data?.whatYouWillLearn || "[]");
+        } catch (e) {
+          learned = [];
+        }
+        setWhatYouWillLearn(learned);
+        setSections(response?.data?.section || []);
+        setRatingAndReviews(response?.data?.reviews || []);
+        setStudentEnrolled(response?.data?.studentEnrolled || []);
         console.log(ratingAndReviews);
       } catch (error) {
         toast.error("Error fetching course data");
@@ -108,11 +114,12 @@ const CourseDetailPage = () => {
   };
 
   const renderRatingStars = (rating) => {
+    const safeRating = Number(rating) || 0;
     return (
       <div className="flex">
         {[1, 2, 3, 4, 5].map((star) => (
           <span key={star} className="text-xl">
-            {star <= rating ? (
+            {star <= safeRating ? (
               <FaStar className="text-yellow-400" />
             ) : (
               <FaRegStar className="text-yellow-400" />
@@ -224,9 +231,9 @@ const CourseDetailPage = () => {
               </p>
               <div className="flex flex-wrap items-center gap-3 lg:gap-4">
                 <div className="flex items-center space-x-1">
-                  {renderRatingStars(basicData.averageRating)}
+                  {renderRatingStars(basicData?.averageRating)}
                   <span className="text-gray-400 text-lg lg:text-xl ml-2">
-                    {basicData.averageRating.toFixed(1)}
+                    {(basicData?.averageRating || 0).toFixed(1)}
                   </span>
                 </div>
                 <span className="text-gray-400 text-sm lg:text-base">
@@ -239,8 +246,7 @@ const CourseDetailPage = () => {
               <div className="text-gray-400 text-sm lg:text-[18px]">
                 Created by{" "}
                 <span className="font-medium text-dark_red hover:text-red-500 cursor-pointer">
-                  {instructor
-                    .map((inst) => `${inst.firstName} ${inst.lastName}`)
+                  {instructor?.map((inst) => `${inst?.firstName || ""} ${inst?.lastName || ""}`)
                     .join(", ")}
                 </span>
               </div>
@@ -259,7 +265,7 @@ const CourseDetailPage = () => {
                   What You'll Learn
                 </h2>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
-                  {whatYouWillLearn.map((item, index) => (
+                  {whatYouWillLearn?.map((item, index) => (
                     <li
                       key={index}
                       className="flex items-start text-gray-400 text-sm lg:text-base"
@@ -289,7 +295,7 @@ const CourseDetailPage = () => {
                   </button>
                 </div>
                 <div className="space-y-4 lg:space-y-6">
-                  {sections.map((section, index) => (
+                  {sections?.map((section, index) => (
                     <div key={index} className="mb-4 lg:mb-6">
                       {/* Section Header */}
                       <div
@@ -298,11 +304,11 @@ const CourseDetailPage = () => {
                       >
                         <div className="flex-1">
                           <h3 className="text-base lg:text-[20px] font-semibold text-gray-300">
-                            {section.name}
+                            {section?.name}
                           </h3>
-                          {section.description && (
+                          {section?.description && (
                             <p className="text-gray-400 text-xs lg:text-[17px] mt-1">
-                              {section.description}
+                              {section?.description}
                             </p>
                           )}
                         </div>
@@ -317,14 +323,13 @@ const CourseDetailPage = () => {
 
                       {/* Subsection List */}
                       <div
-                        className={`overflow-hidden transition-all duration-500  p-2 ${
-                          expandedSections.includes(index)
+                        className={`overflow-hidden transition-all duration-500  p-2 ${expandedSections.includes(index)
                             ? "max-h-[1000px]"
                             : "max-h-0"
-                        }`}
+                          }`}
                       >
                         <div className="space-y-2 mt-2 ">
-                          {section.subSection?.map((subsection, subIndex) => (
+                          {section?.subSection?.map((subsection, subIndex) => (
                             <div
                               key={subIndex}
                               className="bg-dark_bg border-1 border-gray-700 p-3 lg:p-4 rounded-lg hover:bg-gray-900 cursor-pointer transition-all duration-300"
@@ -336,18 +341,18 @@ const CourseDetailPage = () => {
                                       ▶️
                                     </span>
                                     <span className="text-gray-400 font-medium text-[18px]">
-                                      {subsection.title}
+                                      {subsection?.title}
                                     </span>
                                   </div>
-                                  {subsection.description && (
+                                  {subsection?.description && (
                                     <p className="text-gray-500 text-xs lg:text-[16px] mt-2 ml-6 ">
-                                      {subsection.description}
+                                      {subsection?.description}
                                     </p>
                                   )}
                                 </div>
                                 <div className="flex flex-col justify-center items-center pt-2">
                                   <a
-                                    href={subsection.videoUrl}
+                                    href={subsection?.videoUrl}
                                     target="blank"
                                     className="text-blue-500 hover:text-red-500"
                                   >
@@ -370,23 +375,23 @@ const CourseDetailPage = () => {
               <h2 className="text-xl lg:text-2xl font-bold text-white mb-4 lg:mb-6">
                 Reviews
               </h2>
-              {ratingAndReviews.map((item, index) => (
+              {ratingAndReviews?.map((item, index) => (
                 <div
-                  key={item._id || index}
+                  key={item?._id || index}
                   className="bg-gray-800 text-white rounded-xl p-4 shadow-md border border-gray-700 max-w-md mb-4"
                 >
                   <div className="flex items-center mb-3">
                     <img
-                      src={item.user.image}
-                      alt={`${item.user.firstName} ${item.user.lastName}`}
+                      src={item?.user?.image || `https://api.dicebear.com/5.x/initials/svg?seed=${item?.user?.firstName || "User"}`}
+                      alt={`${item?.user?.firstName || ""} ${item?.user?.lastName || ""}`}
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div>
                       <p className="font-semibold">
-                        {item.user.firstName} {item.user.lastName}
+                        {item?.user?.firstName} {item?.user?.lastName}
                       </p>
                       <div className="flex text-yellow-400">
-                        {[...Array(item.rating)].map((_, i) => (
+                        {[...Array(item?.rating || 0)].map((_, i) => (
                           <svg
                             key={i}
                             xmlns="http://www.w3.org/2000/svg"
@@ -400,7 +405,7 @@ const CourseDetailPage = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-300">{item.review}</p>
+                  <p className="text-gray-300">{item?.review}</p>
                 </div>
               ))}
             </div>

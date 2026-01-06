@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { apiConnector } from "../../services/apiConnector";
 import { apiLinks } from "../../services/apiLink";
 import { toast } from "react-toastify";
@@ -10,14 +10,19 @@ import { setLoading } from "../../redux/slices/uiSlice";
 const DashboardPageAddcatagory = () => {
   const dispatch = useDispatch();
   const [displayCatagory, setDisplayCatagory] = useState("");
-  const { loading } = useSelector((state) => state.ui);
+  const { loading } = useSelector((state) => state.ui) || { loading: false };
 
   const catagoryUpdateHandler = useCallback((event) => {
     setDisplayCatagory(event.target.value);
   }, []);
 
-  async function addcatagoryBackendCall(event) {
+  const addcatagoryBackendCall = async (event) => {
     event.preventDefault();
+    if (!displayCatagory.trim()) {
+      toast.error("Please enter a category name");
+      return;
+    }
+
     dispatch(setLoading(true));
     try {
       const response = await apiConnector(
@@ -26,65 +31,67 @@ const DashboardPageAddcatagory = () => {
         null,
         { name: displayCatagory }
       );
-      if (!response.success) {
-        toast.error("catagory creation failed", {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
-        return;
-      } else {
+      
+      if (response?.success) {
         setDisplayCatagory("");
-        toast.success(response.message, {
-          autoClose: 900,
-          hideProgressBar: true,
-          pauseOnHover: false,
-          closeOnClick: true,
-          draggable: false,
-        });
+        toast.success(response.message || "Category Created");
         dispatch(setCatagory(response.allCatagory));
+      } else {
+        toast.error(response?.message || "Creation failed");
       }
     } catch (error) {
+      console.error("Add Category Error:", error);
+      toast.error("Internal Server Error");
     } finally {
       dispatch(setLoading(false));
     }
-  }
+  };
 
   return (
-    <div className="flex justify-center items-center w-[96%] mt-40 m-auto md:w-[80%]">
-      <form className="border flex flex-col gap-5 justify-center items-center border-gray-600 rounded-lg w-[90%] max-w-[500px] p-5">
-        <label htmlFor="catagory" className="text-gray-400 text-[20px]">
-          Enter catagory
-        </label>
-        <input
-          type="text"
-          id="catagory"
-          value={displayCatagory}
-          onChange={catagoryUpdateHandler}
-          placeholder="Enter catagory name"
-          className="w-full border-[1px] outline-0 text-[18px] border-gray-700 rounded-lg p-5 justify-center flex items-center text-white"
-        />
+    <div className="flex justify-center items-center min-h-[70vh] w-full p-4">
+      <div className="w-full max-w-[450px] bg-gray-800 border-2 border-gray-700 rounded-2xl shadow-2xl p-6 md:p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-black text-white tracking-tight uppercase">
+            ADD <span className="text-red-600 ml-2">CATEGORY</span>
+          </h1>
+          <p className="text-[13px] text-gray-400 font-bold mt-2 uppercase">
+            Create a new course classification
+          </p>
+        </div>
 
-        <button
-          type="submit"
-          onClick={addcatagoryBackendCall}
-          disabled={loading}
-          className="w-full mt-5 flex justify-center items-center py-2 px-4 bg-dark_red hover:bg-dark_red/80 cursor-pointer text-white font-medium rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <GrCatalog className="mr-2" />
-              Add catagory
-            </>
-          )}
-        </button>
-      </form>
+        <form onSubmit={addcatagoryBackendCall} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="catagory" className="text-[11px] uppercase tracking-widest text-gray-200 font-black ml-1">
+              Category Name
+            </label>
+            <input
+              type="text"
+              id="catagory"
+              value={displayCatagory}
+              onChange={catagoryUpdateHandler}
+              placeholder="e.g. Web Development"
+              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-4 text-white outline-none focus:border-red-600 transition-all placeholder:text-gray-600 font-medium"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl transition-all shadow-lg shadow-red-900/20 flex justify-center items-center gap-2 uppercase tracking-widest text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <GrCatalog size={18} />
+                Create Category
+              </>
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
 
-export default React.memo(DashboardPageAddcatagory);
+export default memo(DashboardPageAddcatagory);

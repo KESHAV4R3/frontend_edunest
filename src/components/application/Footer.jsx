@@ -1,121 +1,70 @@
-import React from "react";
+import React, { memo } from "react";
 import { Link } from "react-router-dom";
-import { FaFacebook } from "react-icons/fa";
-import { FaGoogle } from "react-icons/fa";
-import { FaYoutube } from "react-icons/fa";
+import { FaFacebook, FaGoogle, FaYoutube } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
 const Footer = () => {
   return (
-    <div className="bg-gray-900 py-10 w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <div className="flex flex-col items-center">
-          <h3 className="text-gray-300 text-[20px] font-[600]">Company</h3>
-          <ul className="mt-2 space-y-2 text-gray-400">
-            <li>
-              <Link to="/about-us" className="hover:text-white">
-                About
-              </Link>
-            </li>
-            <li>
-              <Link to="/careers" className="hover:text-white">
-                Careers
-              </Link>
-            </li>
-            <li>
-              <Link to="/affiliates" className="hover:text-white">
-                Affiliates
-              </Link>
-            </li>
+    <footer className="bg-gray-900 border-t border-gray-800 pt-16 pb-10 w-full selection:bg-red-600/30">
+<div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 text-center lg:text-left">
+             
+        {/* Column 1: Company & Brand */}
+        <div className="flex flex-col items-center lg:items-start">
+          <h3 className="text-gray-200 text-[13px] font-black uppercase mb-6">
+            Platform <span className="text-red-500 ml-1">Core</span>
+          </h3>
+          <ul className="space-y-3 text-center lg:text-left">
+            {["About Us", "Careers", "Affiliates"].map((item) => (
+              <li key={item}>
+                <Link 
+                  to={`/${item.toLowerCase().replace(" ", "-")}`} 
+                  className="text-gray-500 hover:text-white text-sm font-medium transition-colors duration-200"
+                >
+                  {item}
+                </Link>
+              </li>
+            ))}
           </ul>
-          <div className="flex space-x-4 mt-4">
-            <Link to="#" className="hover:text-white">
-              <FaFacebook className="text-blue-500 text-[21px]" />
-            </Link>
-            <Link to="#" className="hover:text-white">
-              <FaGoogle className="text-green-500 text-[21px]" />
-            </Link>
-            <Link to="#" className="text-white">
-              <FaXTwitter className=" text-[21px]" />
-            </Link>
-            <Link to="#" className="hover:text-white">
-              <FaYoutube className="text-red-500 text-[21px]" />
-            </Link>
+          
+          {/* Unified Social Icons */}
+          <div className="flex space-x-5 mt-8">
+            {[FaFacebook, FaGoogle, FaXTwitter, FaYoutube].map((Icon, idx) => (
+              <Link key={idx} to="#" className="text-gray-600 hover:text-red-600 transition-all duration-300 transform hover:-translate-y-1">
+                <Icon size={20} />
+              </Link>
+            ))}
           </div>
         </div>
 
-        <div className="flex flex-col items-center">
-          <h3 className="text-gray-300 text-[20px] font-[600]">Resources</h3>
-          <ul className="mt-2 space-y-2 text-center text-gray-400">
-            <li>
-              <Link to="/articles" className="hover:text-white">
-                Articles
-              </Link>
-            </li>
-            <li>
-              <Link to="/blog" className="hover:text-white">
-                Blog
-              </Link>
-            </li>
-            <li>
-              <Link to="/chart-sheet" className="hover:text-white">
-                Chart Sheet
-              </Link>
-            </li>
-            <li>
-              <Link to="/code-challenges" className="hover:text-white">
-                Code Challenges
-              </Link>
-            </li>
-            <li>
-              <Link to="/docs" className="hover:text-white">
-                Docs
-              </Link>
-            </li>
-            <li>
-              <Link to="/projects" className="hover:text-white">
-                Projects
-              </Link>
-            </li>
-            <li>
-              <Link to="/videos" className="hover:text-white">
-                Videos
-              </Link>
-            </li>
-            <li>
-              <Link to="/workspaces" className="hover:text-white">
-                Workspaces
-              </Link>
-            </li>
+        {/* Column 2: Resources */}
+        <div className="flex flex-col items-center lg:items-start">
+         <h3 className="text-gray-200 text-[13px] font-black uppercase mb-6">
+            Deployment <span className="text-red-500 ml-1">Assets</span>
+          </h3>
+          <ul className="space-y-3 text-center lg:text-left">
+            {["Articles", "Blog", "Chart Sheet", "Code Challenges", "Docs", "Projects", "videos", "Workspaces"].map((item) => (
+              <li key={item}>
+                <Link to={`/${item.toLowerCase().replace(" ", "-")}`} className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
+                  {item}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 
-        <div className="flex flex-col items-center">
-          <h3 className="text-gray-300 text-[20px] font-[600]">Subjects</h3>
-          <ul className="mt-2 space-y-2 text-center">
+        {/* Column 3: Subjects */}
+        <div className="flex flex-col items-center lg:items-start">
+ <h3 className="text-gray-200 text-[13px] font-black uppercase mb-6">            Sector <span className="text-red-500 ml-1">Inventory</span>
+          </h3>
+          <ul className="grid grid-cols-1 gap-3 text-center lg:text-left">
             {[
-              "AI",
-              "Cloud Computing",
-              "Code Foundations",
-              "Computer Science",
-              "Cybersecurity",
-              "Data Analytics",
-              "Data Science",
-              "Data Visualization",
-              "Developer Tools",
-              "DevOps",
-              "Game Development",
-              "IT",
-              "Machine Learning",
-              "Math",
-              "Mobile Development",
-              "Web Design",
-              "Web Development",
-            ].map((subject, index) => (
-              <li key={index}>
+              "AI", "Cloud Computing", "Computer Science", "Cybersecurity", 
+              "Data Science", "DevOps", "Game Development", "Web Development"
+            ].map((subject) => (
+              <li key={subject}>
                 <Link
                   to={`/${subject.toLowerCase().replace(/ /g, "-")}`}
-                  className="hover:text-white text-gray-400"
+                  className="text-gray-500 hover:text-white text-sm font-medium transition-colors"
                 >
                   {subject}
                 </Link>
@@ -124,30 +73,16 @@ const Footer = () => {
           </ul>
         </div>
 
-        <div className="flex flex-col items-center">
-          <h3 className="text-gray-300 text-[20px] font-[600]">Languages</h3>
-          <ul className="mt-2 space-y-2 text-center">
+        {/* Column 4: Languages */}
+        <div className="flex flex-col items-center lg:items-start">
+ <h3 className="text-gray-200 text-[13px] font-black uppercase mb-6">            Syntax <span className="text-red-500 ml-1">Protocols</span>
+          </h3>
+          <ul className="grid grid-cols-2 lg:grid-cols-1 gap-x-8 gap-y-3 text-center lg:text-left">
             {[
-              "Bash",
-              "C++",
-              "C#",
-              "Go",
-              "HTML & CSS",
-              "Java",
-              "JavaScript",
-              "Kotlin",
-              "PHP",
-              "Python",
-              "R",
-              "Ruby",
-              "SQL",
-              "Swift",
-            ].map((lang, index) => (
-              <li key={index}>
-                <Link
-                  to={`/${lang.toLowerCase()}`}
-                  className="hover:text-white text-gray-400"
-                >
+              "Bash", "C++", "Go", "HTML & CSS", "Java", "JavaScript", "Python", "SQL"
+            ].map((lang) => (
+              <li key={lang}>
+                <Link to={`/${lang.toLowerCase().replace(" & ", "-")}`} className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
                   {lang}
                 </Link>
               </li>
@@ -156,22 +91,29 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm">
-        <p className="text-gray-500">Made by keshav kumar 🦅 © 2023 EduNest</p>
-        <div className="mt-4 flex justify-center space-x-6 text-gray-400">
-          <Link to="/privacy-policy" className="hover:text-white">
-            Privacy Policy
-          </Link>
-          <Link to="/cookie-policy" className="hover:text-white">
-            Cookie Policy
-          </Link>
-          <Link to="/terms" className="hover:text-white">
-            Terms
-          </Link>
+      {/* Bottom Legal Section */}
+      <div className="max-w-[1400px] mx-auto px-6 border-t border-gray-800 mt-16 pt-8">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-gray-600 text-[10px] font-black tracking-widest order-2 md:order-1 text-center md:text-left">
+            Made by <span className="text-gray-400">keshav kumar</span> 🦅 <br className="md:hidden"/> 
+            © {new Date().getFullYear()} EDUNEST ARCHIVE
+          </p>
+          
+          <div className="flex space-x-8 order-1 md:order-2">
+            {["Privacy Policy", "Cookie Policy", "Terms"].map((legal) => (
+              <Link 
+                key={legal} 
+                to={`/${legal.toLowerCase().replace(" ", "-")}`} 
+                className="text-gray-600 hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition-colors"
+              >
+                {legal}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </footer>
   );
 };
 
-export default React.memo(Footer);
+export default memo(Footer);
