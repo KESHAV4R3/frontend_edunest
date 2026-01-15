@@ -240,8 +240,6 @@ const Header = () => {
           />
         </Link>
 
-        {/* Desktop Navigation options with NavLink */}
-       {/* Desktop Navigation options with NavLink */}
 <div className="hidden tablet:flex items-center gap-14 text-[19px] font-medium">
   {navOptions.map((value, index) => (
     <div key={value.name} className="relative">
