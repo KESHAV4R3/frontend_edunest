@@ -241,92 +241,106 @@ const Header = () => {
         </Link>
 
         {/* Desktop Navigation options with NavLink */}
-        <div className="hidden tablet:flex items-center gap-14 text-[19px] font-medium">
-          {navOptions.map((value, index) => (
-            <div key={index} className="relative">
-              {value.name === "Catalog" ? (
-                <div
-                  className="relative"
-                  onMouseEnter={() => setCatalogDisplay(true)}
-                  onMouseLeave={() => setCatalogDisplay(false)}
-                >
-                  <NavLink
-                    to={value.location}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 cursor-pointer transition ${
-                        isActive ? activeLinkClass : normalLinkClass
-                      }`
-                    }
-                  >
-                    {value.name}
-                    {catalogDisplay ? (
-                      <MdKeyboardArrowUp />
-                    ) : (
-                      <MdKeyboardArrowDown />
-                    )}
-                  </NavLink>
-                  
-                  {/* Catalog Dropdown */}
-                  <div
-                    className={`fixed top-24 left-1/2 transform -translate-x-1/2 w-[80vw] max-w-[900px] bg-dark_bg border border-gray-700 text-white p-6 rounded-lg shadow-2xl z-20
-                      transition-all duration-200 ease-in-out overflow-hidden
-                      ${catalogDisplay
-                        ? "opacity-100 translate-y-0 visible"
-                        : "opacity-0 -translate-y-2 invisible"
-                      }`}
-                    onMouseEnter={() => setCatalogDisplay(true)}
-                    onMouseLeave={() => setCatalogDisplay(false)}
-                  >
-                    <div className="grid grid-cols-4 gap-6">
-                      {categories?.map((category, index) => (
-                        <NavLink
-                          to={`/category/${category.name}?category_id=${category._id}`}
-                          key={index}
-                          className={({ isActive }) =>
-                            `group ${isActive ? 'ring-2 ring-red-500 ring-inset' : ''}`
-                          }
-                          onClick={() => setCatalogDisplay(false)}
-                        >
-                          <div className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-800 transition-all duration-200">
-                            <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-dark_red transition-all duration-200">
-                              <span className="text-lg font-bold">
-                                {category.name.charAt(0)}
-                              </span>
-                            </div>
-                            <p className="text-center text-sm font-medium text-gray-300 group-hover:text-white">
-                              {category.name}
-                            </p>
-                          </div>
-                        </NavLink>
-                      ))}
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <NavLink
-                        to="/all-categories"
-                        className="text-dark_red hover:text-red-400 font-medium flex items-center justify-center gap-2 transition-colors"
-                        onClick={() => setCatalogDisplay(false)}
-                      >
-                        View All Categories
-                        <MdKeyboardArrowDown className="text-xl" />
-                      </NavLink>
-                    </div>
-                  </div>
+       {/* Desktop Navigation options with NavLink */}
+<div className="hidden tablet:flex items-center gap-14 text-[19px] font-medium">
+  {navOptions.map((value, index) => (
+    <div key={value.name} className="relative">
+      {value.name === "Catalog" ? (
+        <div
+          className="relative"
+          onMouseEnter={() => setCatalogDisplay(true)}
+          onMouseLeave={() => setCatalogDisplay(false)}
+        >
+          <NavLink
+            to={value.location}
+            className={({ isActive }) =>
+              `flex items-center gap-2 cursor-pointer transition ${
+                isActive ? activeLinkClass : normalLinkClass
+              }`
+            }
+          >
+            {value.name}
+            {catalogDisplay ? (
+              <MdKeyboardArrowUp />
+            ) : (
+              <MdKeyboardArrowDown />
+            )}
+          </NavLink>
+          
+          {/* Catalog Dropdown */}
+          <AnimatePresence>
+            {catalogDisplay && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="fixed top-24 left-1/2 transform -translate-x-1/2 w-[80vw] max-w-[900px] bg-dark_bg border border-gray-700 text-white p-6 rounded-lg shadow-2xl z-50"
+                onMouseEnter={() => setCatalogDisplay(true)}
+                onMouseLeave={() => setCatalogDisplay(false)}
+              >
+                <div className="grid grid-cols-4 gap-6">
+                  {categories?.map((category) => (
+                    <NavLink
+                      to={`/category/${category.name}?catagory_id=${category._id}`}
+                      key={category._id}
+                      className={({ isActive }) =>
+                        `group ${isActive ? 'ring-2 ring-red-500 ring-inset' : ''}`
+                      }
+                      onClick={() => {
+                        setCatalogDisplay(false);
+                        window.scrollTo(0, 0);
+                      }}
+                    >
+                      <div className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-800 transition-all duration-200">
+                        <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-dark_red transition-all duration-200">
+                          <span className="text-lg font-bold">
+                            {category.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-center text-sm font-medium text-gray-300 group-hover:text-white">
+                          {category.name}
+                        </p>
+                      </div>
+                    </NavLink>
+                  ))}
                 </div>
-              ) : (
-                <NavLink
-                  to={value.location}
-                  className={({ isActive }) =>
-                    `cursor-pointer hover:text-red-700 transition ${
-                      isActive ? activeLinkClass : normalLinkClass
-                    }`
-                  }
-                >
-                  {value.name}
-                </NavLink>
-              )}
-            </div>
-          ))}
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <NavLink
+                    to="/all-categories"
+                    className="text-dark_red hover:text-red-400 font-medium flex items-center justify-center gap-2 transition-colors"
+                    onClick={() => {
+                      setCatalogDisplay(false);
+                      window.scrollTo(0, 0);
+                    }}
+                  >
+                    View All Categories
+                    <MdKeyboardArrowDown className="text-xl" />
+                  </NavLink>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      ) : (
+        <NavLink
+          to={value.location}
+          className={({ isActive }) =>
+            `cursor-pointer hover:text-red-700 transition ${
+              isActive ? activeLinkClass : normalLinkClass
+            }`
+          }
+          onClick={() => {
+            setMenuOpen(false);
+            window.scrollTo(0, 0);
+          }}
+        >
+          {value.name}
+        </NavLink>
+      )}
+    </div>
+  ))}
+</div>
 
         {/* Right Section (Search, Cart, Profile) */}
         <div className="flex items-center gap-5">
